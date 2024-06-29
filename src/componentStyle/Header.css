@@ -15,12 +15,14 @@ div.header {
 }
 
 #avatar {
-    width: 70%;
+    width: 100%;
     /* aspect-ratio: 1/1; */
     object-fit: cover;
     border-radius: 1.5rem;
 }
-
+.nav-link:first-child{
+    width: 60%;
+}
 .nav-link {
     position: relative;
     color: white;
@@ -71,11 +73,11 @@ body, html{
     height: 100%;
 }
 
-legend, label, input, ul, li{
+legend, label, input, ul.menu, li.menuElem{
     margin: 0;
     padding: 0;
 }
-ul,li{
+ul.menu,li.menuElem{
     list-style: none;
 }
 a{
@@ -124,14 +126,14 @@ a{
     height: 100%;
     background:#111;
 }
-.nav ul{
+.nav ul.menu{
     width: 100%;
 }
-.nav ul li{
+.nav ul.menu li.menuElem{
     width: 100%;
     text-align: center;
 }
-.nav ul li a{
+.nav ul.menu li.menuElem a{
     display: inline-block;
     font-size: 36px;
     color: #fff;

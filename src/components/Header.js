@@ -37,10 +37,10 @@ export default function Header() {
         </label>
         <aside className="sidebar">
           <ul className="menu">
-            <li><NavLink className="menu-link nav-link" to="/" end onClick={handleLinkClick}>Home</NavLink></li>
-            <li><NavLink className="menu-link nav-link" to="/projects" onClick={handleLinkClick}>Projects</NavLink></li>
-            <li><NavLink className="menu-link nav-link" to="/about" onClick={handleLinkClick}>About</NavLink></li>
-            <li><NavLink className="menu-link nav-link" to="/contact" onClick={handleLinkClick}>Contact</NavLink></li>
+            <li className="menuElem"><NavLink className="menu-link nav-link" to="/" end onClick={handleLinkClick}>Home</NavLink></li>
+            <li className="menuElem"><NavLink className="menu-link nav-link" to="/projects" onClick={handleLinkClick}>Projects</NavLink></li>
+            <li className="menuElem"><NavLink className="menu-link nav-link" to="/about" onClick={handleLinkClick}>About</NavLink></li>
+            <li className="menuElem"><NavLink className="menu-link nav-link" to="/contact" onClick={handleLinkClick}>Contact</NavLink></li>
           </ul>
         </aside>
       </div>

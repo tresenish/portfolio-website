@@ -1,3 +1,53 @@
-main{
+.homeGrid {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
     color: white;
+    width: 80%;
+    margin: 3rem auto;
+}
+
+.card.big {
+    height: 12rem;
+}
+
+.card.small {
+
+}
+
+.card {
+    border-radius: 1rem;
+    background-color: #111;
+    width: 100%;
+}
+
+.card.LT {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    background-color: transparent;
+}
+
+div.skills {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+ul.skills {
+    list-style-type: disc;  /* Ensure the list style type is set to disc */
+    color: white;
+    margin: 0;  /* Reset margin */
+    padding-left: 20px;  /* Add padding to create space for the disc */
+}
+
+li.skills {
+    margin: 0.5rem 0;  /* Ensure there's space between list items */
+}
+
+/* New CSS for LB to occupy two sections */
+.card.LB {
+    grid-column: span 2;
 }
