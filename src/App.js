@@ -1,3 +1,5 @@
+// App.js
+
 import React from "react";
 import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } from 'react-router-dom';
 import Root from "./components/Root";
@@ -8,18 +10,19 @@ import Contact from "./components/Contact";
 
 import './App.css';
 
-const router = createBrowserRouter( createRoutesFromElements(
-  <Route path="/" element={ <Root/> }>
-    <Route path="home" element={<Home/>}/>
-    <Route path="projects" element={<Projects/>}/>
-    <Route path="about" element={<About/>}/>
-    <Route path="contact" element={<Contact/>}/>
+const router = createBrowserRouter(createRoutesFromElements(
+  <Route path="/" element={<Root />}>
+    <Route index element={<Home />} />
+    <Route path="projects" element={<Projects />} />
+    <Route path="about" element={<About />} />
+    <Route path="contact" element={<Contact />} />
   </Route>
 ))
+
 function App() {
   return (
     <>
-      <RouterProvider router={router}/>
+      <RouterProvider router={router} />
     </>
   );
 }
