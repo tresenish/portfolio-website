@@ -75,6 +75,36 @@ export default function Projects() {
             ● Figma, UI/UX<br/>
           </p>
         </div>
+        <div className="projectCard">
+          <h2 className="projectCard">
+            <a className="projectLink" href="https://tresenish.github.io/">
+              Monochrome
+            </a>
+            <span className="linkIcon material-symbols-outlined">link</span>
+          </h2>
+          <img className="projectCard" alt="projectDemo" src={require("../componentStyle/img/monochrome-screenshot.png")} />
+          <div className="overlay">
+            <h2 className="overlayTitle">
+              <a className="projectLink" href="https://tresenish.github.io/">
+              Monochrome
+              </a>
+              <span className="linkIcon material-symbols-outlined">link</span>
+            </h2>
+            <img className="overlayImage" alt="projectDemo" src={require("../componentStyle/img/monochromeDemo.gif")} />
+            <p className="overlayDescription">
+            Monochrome is a sleek and modern e-commerce portfolio website designed
+             to showcase and sell products with a minimalist aesthetic. The project
+              demonstrates proficiency in HTML, CSS, and UI/UX design, creating a 
+              seamless experience for users.
+            </p>
+          </div>
+          <p className="projectCard">
+            <br/>
+            E-commerce portfolio website <br/>
+            ● HTML, CSS<br/>
+            ● UI/UX<br/>
+          </p>
+        </div>
       </div>
     </div>
   );
