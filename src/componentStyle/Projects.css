@@ -1,0 +1,117 @@
+.projects {
+    color: white;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  
+  div.projects {
+    margin: 2rem 0 0 3rem;
+  }
+  
+  div.projectGrid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+  
+  div.projectCard {
+    position: relative;
+    width: 35rem;
+    height: auto;
+    background-color: #111;
+    border-radius: 1.5rem;
+    padding: 1rem;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+  }
+  
+  h2.projectCard {
+    margin: 1rem 0;
+    font-size: 1.6rem;
+    align-self: center;
+    font-family: "IBM Plex Mono", monospace;
+    display: flex;
+    align-items: center;
+  }
+  span.linkIcon{
+    font-size: 2rem;
+  }
+  a.projectLink{
+    text-decoration: underline;
+    color: white;
+  }
+  img.projectCard {
+    display: flex;
+    width: 94%;
+    object-fit: contain;
+    border-radius: 1rem;
+    align-self: center;
+  }
+  
+  p.projectCard {
+    font-family: "Roboto", sans-serif;
+    font-size: 1.2rem;
+  }
+  
+  .overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 60vw;
+    height: auto;
+    background-color: rgba(0, 0, 0, 0.95);
+    border: 1px solid grey;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    border-radius: 1.5rem;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    padding: 2rem;
+  }
+  
+  div.projectCard:hover .overlay {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  h2.overlayTitle {
+    color: white;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  
+  img.overlayImage {
+    max-width: 90%;
+    max-height: 60%;
+    object-fit: contain;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  p.overlayDescription {
+    color: white;
+    font-family: "Roboto", sans-serif;
+    font-size: 1.2rem;
+    text-align: left;
+    max-width: 80%;
+  }
+  
+  @media only screen and (max-width: 800px) {
+    div.projects {
+      margin: 2rem 1rem 0 1rem;
+    }
+    
+    .overlay {
+      width: 90vw;
+      height: auto;
+    }
+  }

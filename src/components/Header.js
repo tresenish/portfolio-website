@@ -16,7 +16,7 @@ export default function Header() {
   return (
     <>
       <div className="header">
-        <NavLink className="nav-link" to="/"><img id="avatar" alt="avatar" src={require("../componentStyle/avatar.jpg")} /></NavLink>
+        <NavLink className="nav-link" to="/"><img id="avatar" alt="avatar" src={require("../componentStyle/img/avatar.jpg")} /></NavLink>
         <NavLink className="nav-link" to="/" end>Home</NavLink>
         <NavLink className="nav-link" to="/projects">Projects</NavLink>
         <NavLink className="nav-link" to="/about">About</NavLink>

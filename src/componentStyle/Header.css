@@ -91,7 +91,8 @@ a{
     width:6rem;
     height: 6rem;
     background: #111;
-    z-index: 100;
+    border: 1px solid white;
+    z-index: 10;
     display: flex;
     justify-content:center;
     align-items:center;
@@ -147,6 +148,7 @@ a{
     width: 100%;
     background:#111;
     opacity: 0.5;
+    z-index: 3;
     display: flex;
     justify-content: center;
     align-items: center; 
