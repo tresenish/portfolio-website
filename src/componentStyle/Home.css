@@ -1,7 +1,7 @@
 h1.home {
     color: #fff;
     font-family: "IBM Plex Mono", monospace;
-    margin: 1rem 0 0 0;
+    margin: 3rem 0 0 0;
     padding-left: 10%;
     font-size: 2rem;
 }
@@ -28,8 +28,11 @@ h1.home {
     align-items: center;
     justify-content: center;
     text-align: center;
+    transition-duration: 300ms;
 }
-
+.card.small:hover{
+    border: 1px solid #555;
+}
 .card.small h3 {
     font-size: 2rem;
     margin: 0;
@@ -53,8 +56,11 @@ h1.home {
 .card.big {
     padding: 1rem;
     border: 1px solid #333;
+    transition-duration: 300ms;
 }
-
+.card.big:hover{
+    border: 1px solid #555;
+}
 .card.LT {
     display: grid;
     grid-template-rows: 1fr 1fr;

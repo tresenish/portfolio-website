@@ -1,6 +1,7 @@
 .projects {
   color: white;
   font-family: "IBM Plex Mono", monospace;
+
 }
 
 h1.projects {
@@ -12,6 +13,8 @@ div.projects {
   max-width: 1200px;
   display: flex;
   flex-direction: column;
+  margin-bottom: 3rem;
+
 }
 
 div.projectGrid {
@@ -85,7 +88,7 @@ p.projectCard {
   align-items: center;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
   border-radius: 1.5rem;
   z-index: 2;
   padding: 2rem;
@@ -147,7 +150,7 @@ p.overlayDescription {
   }
 
   div.projects {
-    margin: 2rem 1rem 0 1rem;
+    margin: 2rem 1rem 3rem 1rem;
   }
 
   div.projectCard {

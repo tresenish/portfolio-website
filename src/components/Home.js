@@ -4,8 +4,7 @@ import "../componentStyle/Home.css";
 export default function Home() {
   return (
     <div>
-      <h1 className="home">Hello, I'm Volodymyr Korol.<br/>
-      I am a full-stack developer.</h1>
+      <h1 className="home">Hello, I'm Volodymyr Korol.<br/>I am a full-stack developer.</h1>
       <div className="homeGrid">
         <section className="card LT"> 
           <div className="card small LT1">
@@ -25,7 +24,6 @@ export default function Home() {
             <p>Hackathon Participant</p>
           </div>
         </section>
-
         <section className="card big LB">
           <h2 className="h2Card">Skills:</h2>
           <div className="skills">

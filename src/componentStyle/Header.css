@@ -123,10 +123,19 @@ div.header {
     margin: 0 0 10px 0px;
     position: relative;
     transition: all 0.40s ease-out;
+    top: 5px; /* Default position */
+}
+
+.menu-toggler-line:nth-child(2) {
+    top: 5px; /* Adjust as needed */
+}
+
+.menu-toggler-line:nth-child(3) {
+    top: 5px; /* Adjust as needed */
 }
 
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line {
-    top: 5px;
+    top: 12px;
     transform: rotate(45deg);
 }
 
@@ -135,7 +144,7 @@ div.header {
 }
 
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line:nth-child(3) {
-    top: -5px;
+    top: 0px;
     transform: rotate(135deg);
 }
 
@@ -163,9 +172,9 @@ div.header {
 }
 
 .sidebar {
-    position: fixed; /* Changed from absolute to fixed */
+    position: fixed;
     top: 0;
-    left: 0; /* Added left: 0 to ensure it's fixed at the left edge */
+    left: 0;
     height: 100vh;
     width: 100%;
     background: #111;
@@ -174,7 +183,7 @@ div.header {
     display: flex;
     justify-content: center;
     align-items: center; 
-    transform: translateX(-100%); 
+    transform: translateX(-100%);
     transition: all 0.40s ease-out;
 }
 
