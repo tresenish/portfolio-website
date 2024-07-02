@@ -12,7 +12,7 @@ export default function Header() {
   const handleLinkClick = () => {
     setMenuOpen(false);
   };
-
+  
   return (
     <>
       <div className="header">

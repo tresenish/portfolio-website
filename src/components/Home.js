@@ -27,7 +27,7 @@ export default function Home() {
               <li className="skills">MySQL</li>
               <li className="skills">MochaJS</li>
               <li className="skills">Java</li>
-              <li className="skills">Python/C++</li>
+              <li className="skills">Git</li>
             </ul>
           </div>
         </section>

@@ -1,10 +1,35 @@
-/* src/componentStyle/Header.css */
-div.header{
+/* General styles */
+* {
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+}
+
+legend, label, input, ul.menu, li.menuElem {
+    margin: 0;
+    padding: 0;
+}
+
+ul.menu, li.menuElem {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* Header styles */
+div.header {
     display: block;
 }
-div.mobileHeader{
+
+div.mobileHeader {
     display: none;
 }
+
 div.header {
     background-color: #111;
     display: flex;
@@ -16,26 +41,24 @@ div.header {
 
 #avatar {
     width: 100%;
-    /* aspect-ratio: 1/1; */
     object-fit: cover;
     border-radius: 1.5rem;
 }
-.nav-link:first-child{
+
+.nav-link:first-child {
     width: 60%;
 }
+
 .nav-link {
     position: relative;
     color: white;
     text-decoration: none;
-    /* border: 1px solid pink; */
     margin: 1rem 2rem;
     display: flex;
     align-items: end;
     font-size: 1.5rem;
 }
-.navSymbol{
-    margin: 0 0.5rem 0 0;
-}
+
 .nav-link::before {
     content: "";
     position: absolute;
@@ -47,126 +70,127 @@ div.header {
     background-color: #fff;
     transform: scaleX(0);
     transition: transform 0.3s ease;
-  }
+}
+
 .nav-link:hover::before {
     transform: scaleX(1);
 }
+
 .nav-link:first-child::before {
     display: none;
 }
+
 .avatar-link {
     display: block;
 }
+
+/* Mobile Header styles */
 @media only screen and (max-width: 800px) {
-    div.header{
+    div.header {
         display: none;
     }
-    div.mobileHeader{
+
+    div.mobileHeader {
         display: block;
     }
 }
-*{
-    box-sizing: border-box;
-}
-body, html{
-    width: 100%;
-    height: 100%;
+
+/* Toggler styles */
+.input-toggler {
+    display: none;
 }
 
-legend, label, input, ul.menu, li.menuElem{
-    margin: 0;
-    padding: 0;
-}
-ul.menu,li.menuElem{
-    list-style: none;
-}
-a{
-    text-decoration: none;
-}
-.input-toggler{display: none;}
-.menu-toggler{
+.menu-toggler {
     position: fixed;
     right: 0px;
     bottom: 0px;
-    width:6rem;
+    width: 6rem;
     height: 6rem;
     background: #111;
     border: 1px solid #333;
     z-index: 10;
     display: flex;
-    justify-content:center;
-    align-items:center;
-    flex-direction:column;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
     cursor: pointer;
 }
-.menu-toggler-line{
+
+.menu-toggler-line {
     width: 60%;
-    height:3px;
-    background:white;
+    height: 3px;
+    background: white;
     margin: 0 0 10px 0px;
     position: relative;
-    transition: all .40s ease-out;
+    transition: all 0.40s ease-out;
 }
+
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line {
     top: 5px;
-    translateY:100px;
-    transform:rotate(45deg);
+    transform: rotate(45deg);
 }
+
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line:nth-child(2) {
     display: none;
 }
-  
+
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line:nth-child(3) {
     top: -5px;
-    translateY:10;
-    transform:rotate(135deg);
+    transform: rotate(135deg);
 }
-  
-.nav{
+
+/* Sidebar styles */
+.nav {
     width: 100%;
     height: 100%;
-    background:#111;
+    background: #111;
 }
-.nav ul.menu{
+
+.nav ul.menu {
     width: 100%;
 }
-.nav ul.menu li.menuElem{
+
+.nav ul.menu li.menuElem {
     width: 100%;
     text-align: center;
 }
-.nav ul.menu li.menuElem a{
+
+.nav ul.menu li.menuElem a {
     display: inline-block;
     font-size: 36px;
     color: #fff;
     text-transform: uppercase;
 }
-  
+
 .sidebar {
-    position: absolute;
+    position: fixed; /* Changed from absolute to fixed */
     top: 0;
+    left: 0; /* Added left: 0 to ensure it's fixed at the left edge */
     height: 100vh;
     width: 100%;
-    background:#111;
+    background: #111;
     opacity: 0.5;
     z-index: 3;
     display: flex;
     justify-content: center;
     align-items: center; 
     transform: translateX(-100%); 
-    transition: all .40s ease-out;
+    transition: all 0.40s ease-out;
 }
-  
+
+.input-toggler:checked ~ .sidebar {
+    transform: translateX(0%);
+    opacity: .98;
+}
+
+/* Menu link styles */
 .menu-link {
     color: white;
     font-size: 8vmin;
     line-height: 15vmin;
-    -webkit-transition: all .25s ease-out;
-    transition: all .25s ease-out;
+    transition: all 0.25s ease-out;
 }
+
 .menu-link:hover, .menu-link:focus, .menu-link:active {
     color: grey;
-}  
-.input-toggler:checked ~ .sidebar {
-    transform: translateX(0%);
-    opacity: .98;
 }

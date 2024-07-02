@@ -1,0 +1,41 @@
+div.contact{
+    color: white;
+    margin: 3rem 0 0 8rem ;
+}
+h1.contact{
+  font-family: "IBM Plex Mono", monospace;
+
+}
+#mediaLinks{
+    display: flex;
+    flex-direction: column;
+}
+div.socMed {
+    display: inline-block;
+    width: fit-content;
+}
+
+a.socMed {
+    display: flex;
+    align-items: center;
+    margin: 1rem 0;
+    white-space: nowrap;
+}
+img.socMed{
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: 0 0.5rem 0 0;
+}
+#github{
+    background-color: white;
+    border-radius: 1rem;
+}
+#mail{
+    background-color: white;
+    border-radius: 0.4rem;
+}
+h2.socMed{
+    color: white;
+    font-family: "IBM Plex Mono", monospace;
+}
+  
