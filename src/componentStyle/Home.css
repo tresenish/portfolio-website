@@ -1,10 +1,11 @@
-h1.home{
+h1.home {
     color: #fff;
     font-family: "IBM Plex Mono", monospace;
     margin: 1rem 0 0 0;
     padding-left: 10%;
     font-size: 2rem;
 }
+
 .homeGrid {
     display: grid;
     grid-template-rows: auto auto;
@@ -22,6 +23,25 @@ h1.home{
 .card.small {
     padding: 1rem;
     border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.card.small h3 {
+    font-size: 2rem;
+    margin: 0;
+    font-family: "IBM Plex Mono", monospace;
+}
+
+.card.small p {
+    font-size: 1rem;
+    margin: 0;
+    color: gray;
+    font-family: "IBM Plex Mono", monospace;
+
 }
 
 .card {
@@ -46,9 +66,8 @@ h1.home{
 .card.big.LB {
     padding: 1rem;
 }
+
 div.skills {
-    /* display: flex; */
-    /* justify-content: center; */
     gap: 1rem;
 }
 
@@ -70,6 +89,7 @@ li.skills {
     border-radius: 3rem;
     text-align: center;
 }
+
 h2.h2Card {
     font-family: "IBM Plex Mono", monospace;
     font-size: 1.6rem;
@@ -83,49 +103,55 @@ h3.h3Card {
     justify-content: space-between;
     align-items: center;
 }
-span.university{
+
+span.university {
     text-wrap: nowrap;
 }
+
 span.major {
     color: grey;
     font-family: "IBM Plex Mono", monospace;
-    
 }
 
 span.year {
     text-wrap: nowrap;
 }
 
-
 @media only screen and (max-width: 1660px) {
     h3.h3Card {
         font-size: 0.9rem;
     }
 }
+
 @media only screen and (max-width: 800px) {
-    h1.home{
+    h1.home {
         padding-left: 5%;
     }
+
     .homeGrid {
         display: flex;
         flex-wrap: wrap;
         flex-direction: column;
         width: 90%;
     }
+
     h3.h3Card {
         font-size: 1.3rem;
     }
-  }
-  @media only screen and (max-width: 600px) {
-    h1.home{
+}
+
+@media only screen and (max-width: 600px) {
+    h1.home {
         font-size: 1.8rem;
     }
+
     h3.h3Card {
         font-size: 1rem;
     }
-  }
-  @media only screen and (max-width: 400px) {
+}
+
+@media only screen and (max-width: 400px) {
     h3.h3Card {
         font-size: 0.9rem;
     }
-  }
+}

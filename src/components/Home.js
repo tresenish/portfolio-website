@@ -8,10 +8,22 @@ export default function Home() {
       I am a full-stack developer.</h1>
       <div className="homeGrid">
         <section className="card LT"> 
-          <div className="card small LT1">LT1</div>
-          <div className="card small LT2">LT2</div>
-          <div className="card small LT3">LT3</div>
-          <div className="card small LT4">LT4</div>
+          <div className="card small LT1">
+            <h3 className="hSmall">1+ </h3>
+            <p>Year of Experience</p>
+          </div>
+          <div className="card small LT2">
+            <h3 className="hSmall">5+ </h3>
+            <p>Projects Delivered</p>
+          </div>
+          <div className="card small LT3">
+            <h3 className="hSmall">3</h3>
+            <p>Professional Certifications</p>
+          </div>
+          <div className="card small LT4">
+            <h3 className="hSmall">1</h3>
+            <p>Hackathon Participant</p>
+          </div>
         </section>
 
         <section className="card big LB">
@@ -34,7 +46,7 @@ export default function Home() {
         <section className="card big RB">
           <h2 className="h2Card">Experience: </h2>
           <h3 className="h3Card">
-            <span className="university">Front-end developer </span>
+            <span className="university">Front-end Developer </span>
             <span className="year">01/2024 - Present</span>
           </h3>
           <span className="major">Digiturn (Remote)</span>
@@ -42,10 +54,10 @@ export default function Home() {
           <br/>
           <br/>
           <h3 className="h3Card">
-            <span className="university">Software developer</span> 
+            <span className="university">Software Developer</span> 
             <span className="year">02/2023 - 12/2023</span>
           </h3>
-          <span className="major">Freelanse (Remote)</span>
+          <span className="major">Freelance (Remote)</span>
 
         </section>
         <section className="card big RT">
