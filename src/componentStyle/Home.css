@@ -1,25 +1,38 @@
+h1.home{
+    color: #fff;
+    font-family: "IBM Plex Mono", monospace;
+    margin: 1rem 0 0 0;
+    padding-left: 10%;
+    font-size: 2rem;
+}
 .homeGrid {
     display: grid;
-    grid-template-rows: 1fr 1fr;
+    grid-template-rows: auto auto;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
     color: white;
     width: 80%;
-    margin: 3rem auto;
+    margin: 2rem auto;
 }
 
 .card.big {
-    height: 12rem;
+    height: auto;
 }
 
 .card.small {
-
+    padding: 1rem;
+    border: 1px solid #333;
 }
 
 .card {
     border-radius: 1rem;
     background-color: #111;
     width: 100%;
+}
+
+.card.big {
+    padding: 1rem;
+    border: 1px solid #333;
 }
 
 .card.LT {
@@ -30,24 +43,89 @@
     background-color: transparent;
 }
 
+.card.big.LB {
+    padding: 1rem;
+}
 div.skills {
-    display: flex;
-    justify-content: center;
+    /* display: flex; */
+    /* justify-content: center; */
     gap: 1rem;
 }
 
 ul.skills {
-    list-style-type: disc;  /* Ensure the list style type is set to disc */
-    color: white;
-    margin: 0;  /* Reset margin */
-    padding-left: 20px;  /* Add padding to create space for the disc */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    color: black;
+    margin: 0;
 }
 
 li.skills {
-    margin: 0.5rem 0;  /* Ensure there's space between list items */
+    display: block;
+    padding: 0.5rem 1rem;
+    height: auto;
+    background-color: #fff;
+    border: 1px solid #777;
+    font-weight: 500;
+    border-radius: 3rem;
+    text-align: center;
+}
+h2.h2Card {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 1.6rem;
+    margin: 0 0 1rem 0;
 }
 
-/* New CSS for LB to occupy two sections */
-.card.LB {
-    grid-column: span 2;
+h3.h3Card {
+    font-family: "Roboto", sans-serif;
+    font-size: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
+span.university{
+    text-wrap: nowrap;
+}
+span.major {
+    color: grey;
+    font-family: "IBM Plex Mono", monospace;
+    
+}
+
+span.year {
+    text-wrap: nowrap;
+}
+
+
+@media only screen and (max-width: 1660px) {
+    h3.h3Card {
+        font-size: 0.9rem;
+    }
+}
+@media only screen and (max-width: 800px) {
+    h1.home{
+        padding-left: 5%;
+    }
+    .homeGrid {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        width: 90%;
+    }
+    h3.h3Card {
+        font-size: 1.3rem;
+    }
+  }
+  @media only screen and (max-width: 600px) {
+    h1.home{
+        font-size: 1.8rem;
+    }
+    h3.h3Card {
+        font-size: 1rem;
+    }
+  }
+  @media only screen and (max-width: 400px) {
+    h3.h3Card {
+        font-size: 0.9rem;
+    }
+  }

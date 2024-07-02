@@ -1,4 +1,11 @@
 .footer{
     background-color: #222;
     color: white;
+    padding: 1rem 2%;
+    font-family: "IBM Plex Mono", monospace;
+}
+@media only screen and (max-width: 800px) {
+    .footer{
+        padding: 1rem 10%;
+    }
 }
