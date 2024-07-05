@@ -31,7 +31,7 @@ h1.home {
     transition-duration: 300ms;
 }
 .card.small:hover{
-    border: 1px solid #555;
+    border: 1px solid #777;
 }
 .card.small h3 {
     font-size: 2rem;
@@ -59,7 +59,7 @@ h1.home {
     transition-duration: 300ms;
 }
 .card.big:hover{
-    border: 1px solid #555;
+    border: 1px solid #777;
 }
 .card.LT {
     display: grid;
