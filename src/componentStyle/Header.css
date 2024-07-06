@@ -94,7 +94,6 @@
   .avatar-link {
     display: block;
   }
-  
   .cursorChaser {
     position: fixed;
     bottom: 6rem;
@@ -110,48 +109,44 @@
   }
   
   .cursorChaser.two {
-    --factor-x: 0.005;
-    --factor-y: 0.005;
+    --factor-x: 0.00175;
+    --factor-y: 0.00385;
   }
   
   .cursorChaser.three {
-    --factor-x: 0.01;
-    --factor-y: 0.01;
+    --factor-x: 0.0035;
+    --factor-y: 0.0077;
   }
   
   .cursorChaser.four {
-    --factor-x: 0.015;
-    --factor-y: 0.015;
+    --factor-x: 0.00525;
+    --factor-y: 0.01155;
   }
   
   .cursorChaser.five {
-    --factor-x: 0.02;
-    --factor-y: 0.02;
+    --factor-x: 0.007;
+    --factor-y: 0.0154;
   }
   
   .cursorChaser.six {
-    --factor-x: 0.025;
-    --factor-y: 0.025;
+    --factor-x: 0.00875;
+    --factor-y: 0.01925;
   }
   
   .cursorChaser.seven {
-    --factor-x: 0.03;
-    --factor-y: 0.03;
+    --factor-x: 0.0105;
+    --factor-y: 0.0231;
   }
   
   .cursorChaser.eight {
-    --factor-x: 0.035;
-    --factor-y: 0.035;
+    --factor-x: 0.01225;
+    --factor-y: 0.02695;
   }
   
   .cursorChaser.nine {
-    --factor-x: 0.04;
-    --factor-y: 0.04;
+    --factor-x: 0.014;
+    --factor-y: 0.0308;
   }
-  
-  
-  
-  
   
   /* Mobile Header styles */
   @media only screen and (max-width: 800px) {
