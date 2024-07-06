@@ -110,44 +110,45 @@
   }
   
   .cursorChaser.two {
+    --factor-x: 0.005;
+    --factor-y: 0.005;
+  }
+  
+  .cursorChaser.three {
     --factor-x: 0.01;
     --factor-y: 0.01;
   }
   
-  .cursorChaser.three {
+  .cursorChaser.four {
+    --factor-x: 0.015;
+    --factor-y: 0.015;
+  }
+  
+  .cursorChaser.five {
     --factor-x: 0.02;
     --factor-y: 0.02;
   }
   
-  .cursorChaser.four {
+  .cursorChaser.six {
+    --factor-x: 0.025;
+    --factor-y: 0.025;
+  }
+  
+  .cursorChaser.seven {
     --factor-x: 0.03;
     --factor-y: 0.03;
   }
   
-  .cursorChaser.five {
+  .cursorChaser.eight {
+    --factor-x: 0.035;
+    --factor-y: 0.035;
+  }
+  
+  .cursorChaser.nine {
     --factor-x: 0.04;
     --factor-y: 0.04;
   }
   
-  .cursorChaser.six {
-    --factor-x: 0.05;
-    --factor-y: 0.05;
-  }
-  
-  .cursorChaser.seven {
-    --factor-x: 0.06;
-    --factor-y: 0.06;
-  }
-  
-  .cursorChaser.eight {
-    --factor-x: 0.07;
-    --factor-y: 0.07;
-  }
-  
-  .cursorChaser.nine {
-    --factor-x: 0.08;
-    --factor-y: 0.08;
-  }
   
   
   
