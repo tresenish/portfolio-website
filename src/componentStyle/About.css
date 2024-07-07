@@ -26,4 +26,9 @@ div.about {
   img.right {
     float: right;
   }
+  @media only screen and (max-width: 800px) {
+    div.about {
+      width: 85%;
   
+    }
+  }
