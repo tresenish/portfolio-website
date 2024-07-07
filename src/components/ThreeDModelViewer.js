@@ -17,7 +17,7 @@ const ThreeDModelViewer = forwardRef(({ scale }, ref) => {
 
   return (
     <Canvas className="model-canvas" shadows>
-      <ambientLight intensity={0.2} />
+      <ambientLight intensity={0.3} />
       <pointLight position={[10, 10, 10]} intensity={100} />
       <directionalLight
         position={[0, 10, 0]}

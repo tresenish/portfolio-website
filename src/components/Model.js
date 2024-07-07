@@ -13,6 +13,7 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
   const [activeAction, setActiveAction] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
+  const originalPosition = useRef({ x: 0, y: 0, z: 0 });
 
   useEffect(() => {
     if (animations && modelRef.current) {
@@ -23,7 +24,13 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
       });
       setActions(actionMap);
 
-      // Play the default idle animation
+      // Save the original position of the model
+      originalPosition.current = {
+        x: modelRef.current.position.x,
+        y: modelRef.current.position.y,
+        z: modelRef.current.position.z,
+      };
+
       if (actionMap['Idle_A']) {
         const idleAction = actionMap['Idle_A'];
         idleAction.play();
@@ -38,45 +45,54 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
     }
 
     if (modelRef.current) {
-      const x = mousePosition.x * Math.PI * 0.25; // Rotate based on normalized X position, slower
-      const y = -mousePosition.y * Math.PI * 0.1; // Inverted Y rotation
+      const x = mousePosition.x * Math.PI * 0.25;
+      const y = -mousePosition.y * Math.PI * 0.18;
       modelRef.current.rotation.y = x;
       modelRef.current.rotation.x = y;
     }
   });
 
-  const playAction = (action) => {
-    if (!isAnimating) {
-      setIsAnimating(true);
-      action.reset();
-      action.setLoop(LoopOnce, 1);
-      action.clampWhenFinished = true;
-      action.play();
-
-      const onFinished = (e) => {
-        if (e.action === action) {
-          setIsAnimating(false);
-          if (actions['Idle_A']) {
-            actions['Idle_A'].reset();
-            actions['Idle_A'].play();
-            setActiveAction(actions['Idle_A']);
-          }
-          mixerRef.current.removeEventListener('finished', onFinished);
-        }
-      };
-
-      mixerRef.current.addEventListener('finished', onFinished);
+  const stopAllActions = () => {
+    for (const action of Object.values(actions)) {
+      action.stop();
     }
+  };
+
+  const playAction = (action) => {
+    setIsAnimating(true);
+    action.reset();
+    action.setLoop(LoopOnce, 1);
+    action.clampWhenFinished = true;
+    action.play();
+
+    const onFinished = (e) => {
+      if (e.action === action) {
+        // Reset the model to its original position
+        modelRef.current.position.set(
+          originalPosition.current.x,
+          originalPosition.current.y,
+          originalPosition.current.z
+        );
+
+        if (actions['Idle_A']) {
+          actions['Idle_A'].reset();
+          actions['Idle_A'].fadeIn(0.5).play();
+          setActiveAction(actions['Idle_A']);
+        }
+        setIsAnimating(false);
+        mixerRef.current.removeEventListener('finished', onFinished);
+      }
+    };
+
+    mixerRef.current.addEventListener('finished', onFinished);
   };
 
   useImperativeHandle(ref, () => ({
     triggerBounce: () => {
       if (actions['Bounce']) {
         const bounceAction = actions['Bounce'];
-        bounceAction.timeScale = 0.9; // Slows down the bounce animation to half speed
-        if (activeAction) {
-          activeAction.stop();
-        }
+        bounceAction.timeScale = 0.9;
+        stopAllActions();
         playAction(bounceAction);
       }
     }
@@ -86,10 +102,10 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
     const handleMouseMove = (event) => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const originX = 6 * 16; // 6rem in pixels
-      const originY = viewportHeight / 2; // Center of the screen vertically
+      const originX = 9 * 16;
+      const originY = viewportHeight / 2;
       const relativeX = event.clientX - originX;
-      const relativeY = originY - event.clientY; // Invert Y-axis
+      const relativeY = originY - event.clientY;
       const normalizedX = relativeX / (viewportWidth / 2 - originX);
       const normalizedY = relativeY / (viewportHeight / 2);
       setMousePosition({ x: normalizedX, y: normalizedY });
@@ -109,6 +125,25 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
       document.removeEventListener('click', handleClick);
     };
   }, [actions]);
+
+  useEffect(() => {
+    const randomAnimations = ['Sit', 'Jump', 'Eat', 'Fear'];
+
+    const playRandomAnimation = () => {
+      if (!isAnimating) {
+        const randomAnimation = randomAnimations[Math.floor(Math.random() * randomAnimations.length)];
+        if (actions[randomAnimation]) {
+          const animationAction = actions[randomAnimation];
+          stopAllActions();
+          playAction(animationAction);
+        }
+      }
+    };
+
+    const interval = setInterval(playRandomAnimation, 9000);
+
+    return () => clearInterval(interval);
+  }, [actions, isAnimating]);
 
   return <primitive object={gltf.scene} scale={scale} ref={modelRef} />;
 });

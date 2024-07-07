@@ -1,4 +1,3 @@
-/* General styles */
 * {
   box-sizing: border-box;
 }
@@ -21,7 +20,6 @@ a {
   text-decoration: none;
 }
 
-/* Header styles */
 div.header {
   display: block;
   position: relative;
@@ -94,15 +92,13 @@ div.header {
   display: block;
 }
 
-/* Model container */
 .model-container {
   width: 100%;
-  height: 400px; /* Adjust height as needed for consistency */
+  height: 400px;
   position: relative;
   z-index: 1;
 }
 
-/* Mobile Header styles */
 @media only screen and (max-width: 800px) {
   div.header {
     display: none;
@@ -123,7 +119,6 @@ div.header {
     height: 300px;
   }  
 }
-/* Toggler styles */
 .input-toggler {
   display: none;
 }
@@ -135,7 +130,7 @@ div.header {
   width: 6rem;
   height: 6rem;
   background: #111;
-  border: 1px solid #333;
+  border: 1px solid #fff;
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -151,15 +146,15 @@ div.header {
   margin: 0 0 10px 0px;
   position: relative;
   transition: all 0.40s ease-out;
-  top: 5px; /* Default position */
+  top: 5px;
 }
 
 .menu-toggler-line:nth-child(2) {
-  top: 5px; /* Adjust as needed */
+  top: 5px;
 }
 
 .menu-toggler-line:nth-child(3) {
-  top: 5px; /* Adjust as needed */
+  top: 5px;
 }
 
 .input-toggler:checked ~ .menu-toggler .menu-toggler-line {
