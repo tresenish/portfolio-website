@@ -10,7 +10,6 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
   const modelRef = useRef();
   const mixerRef = useRef();
   const [actions, setActions] = useState({});
-  const [activeAction, setActiveAction] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
   const originalPosition = useRef({ x: 0, y: 0, z: 0 });
@@ -34,7 +33,6 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
       if (actionMap['Idle_A']) {
         const idleAction = actionMap['Idle_A'];
         idleAction.play();
-        setActiveAction(idleAction);
       }
     }
   }, [animations]);
@@ -77,7 +75,6 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
         if (actions['Idle_A']) {
           actions['Idle_A'].reset();
           actions['Idle_A'].fadeIn(0.5).play();
-          setActiveAction(actions['Idle_A']);
         }
         setIsAnimating(false);
         mixerRef.current.removeEventListener('finished', onFinished);
@@ -124,7 +121,7 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('click', handleClick);
     };
-  }, [actions]);
+  }, [ref]);
 
   useEffect(() => {
     const randomAnimations = ['Sit', 'Jump', 'Eat', 'Fear'];
@@ -143,7 +140,7 @@ const Model = forwardRef(({ url, animationsUrl, scale }, ref) => {
     const interval = setInterval(playRandomAnimation, 9000);
 
     return () => clearInterval(interval);
-  }, [actions, isAnimating]);
+  }, [actions, isAnimating, playAction, stopAllActions]);
 
   return <primitive object={gltf.scene} scale={scale} ref={modelRef} />;
 });
