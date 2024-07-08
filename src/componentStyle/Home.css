@@ -1,163 +1,221 @@
 h1.home {
-    color: #fff;
-    font-family: "IBM Plex Mono", monospace;
-    margin: 3rem 0 0 0;
-    padding-left: 10%;
-    font-size: 2rem;
+  color: #fff;
+  font-family: "IBM Plex Mono", monospace;
+  margin: 3rem 0 0 0;
+  padding-left: 10%;
+  font-size: 2rem;
 }
 
 .homeGrid {
-    display: grid;
-    grid-template-rows: auto auto;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    color: white;
-    width: 80%;
-    margin: 2rem auto;
+  display: grid;
+  grid-template-rows: auto auto;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  color: white;
+  width: 80%;
+  margin: 2rem auto;
 }
 
 .card.big {
-    height: auto;
+  height: auto;
 }
 
 .card.small {
-    padding: 1rem;
-    border: 1px solid #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition-duration: 300ms;
+  padding: 1rem;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition-duration: 300ms;
 }
-.card.small:hover{
-    border: 1px solid #777;
+.card.small:hover {
+  border: 1px solid #777;
 }
 .card.small h3 {
-    font-size: 2rem;
-    margin: 0;
-    font-family: "IBM Plex Mono", monospace;
+  font-size: 2rem;
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .card.small p {
-    font-size: 1rem;
-    margin: 0;
-    color: gray;
-    font-family: "IBM Plex Mono", monospace;
-
+  font-size: 1rem;
+  margin: 0;
+  color: gray;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .card {
-    border-radius: 1rem;
-    background-color: #111;
-    width: 100%;
+  border-radius: 1rem;
+  background-color: #111;
+  width: 100%;
 }
 
 .card.big {
-    padding: 1rem;
-    border: 1px solid #333;
-    transition-duration: 300ms;
+  padding: 1rem;
+  border: 1px solid #333;
+  transition-duration: 300ms;
 }
-.card.big:hover{
-    border: 1px solid #777;
+.card.big:hover {
+  border: 1px solid #777;
 }
 .card.LT {
-    display: grid;
-    grid-template-rows: 1fr 1fr;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    background-color: transparent;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  background-color: transparent;
 }
 
 .card.big.LB {
-    padding: 1rem;
+  padding: 1rem;
 }
 
 div.skills {
-    gap: 1rem;
+  gap: 1rem;
 }
 
 ul.skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    color: black;
-    margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: black;
+  margin: 0;
 }
 
 li.skills {
-    display: block;
-    padding: 0.5rem 1rem;
-    height: auto;
-    background-color: #fff;
-    border: 1px solid #777;
-    font-weight: 500;
-    border-radius: 3rem;
-    text-align: center;
+  display: block;
+  padding: 0.5rem 1rem;
+  height: auto;
+  background-color: #fff;
+  border: 1px solid #777;
+  font-weight: 500;
+  border-radius: 3rem;
+  text-align: center;
 }
 
 h2.h2Card {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: 1.6rem;
-    margin: 0 0 1rem 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.6rem;
+  margin: 0 0 1rem 0;
 }
 
 h3.h3Card {
-    font-family: "Roboto", sans-serif;
-    font-size: 1.1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  font-family: "Roboto", sans-serif;
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 span.university {
-    text-wrap: nowrap;
+  text-wrap: nowrap;
 }
 
 span.major {
-    color: grey;
-    font-family: "IBM Plex Mono", monospace;
+  color: grey;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 span.year {
-    text-wrap: nowrap;
+  text-wrap: nowrap;
 }
 
 @media only screen and (max-width: 1660px) {
-    h3.h3Card {
-        font-size: 0.9rem;
-    }
+  h3.h3Card {
+    font-size: 0.9rem;
+  }
 }
 
 @media only screen and (max-width: 800px) {
-    h1.home {
-        padding-left: 5%;
-    }
+  h1.home {
+    padding-left: 5%;
+  }
 
-    .homeGrid {
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: column;
-        width: 90%;
-    }
+  .homeGrid {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    width: 90%;
+  }
 
-    h3.h3Card {
-        font-size: 1.3rem;
-    }
+  h3.h3Card {
+    font-size: 1.3rem;
+  }
 }
 
 @media only screen and (max-width: 600px) {
-    h1.home {
-        font-size: 1.8rem;
-    }
+  h1.home {
+    font-size: 1.8rem;
+  }
 
-    h3.h3Card {
-        font-size: 1rem;
-    }
+  h3.h3Card {
+    font-size: 1rem;
+  }
 }
 
 @media only screen and (max-width: 400px) {
-    h3.h3Card {
-        font-size: 0.9rem;
-    }
+  h1.home {
+    font-size: 1.65rem;
+  }
+  h3.h3Card {
+    font-size: 0.9rem;
+  }
+}
+@media only screen and (max-width: 350px) {
+  h1.home {
+    font-size: 1.5rem;
+  }
+
+}
+.glitch1 {
+  position: relative;
+  display: inline-block;
+}
+
+.glitch1:before,
+.glitch1:after {
+  content: attr(title);
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  top: 0;
+}
+
+.glitch1:before {
+  animation: glitchTop1 3s linear infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+  -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+}
+
+@keyframes glitchTop1 {
+  2%, 64% {
+    transform: translate(1px, -1px);
+  }
+  4%, 60% {
+    transform: translate(-1px, 1px);
+  }
+  62% {
+    transform: translate(6px, -0.5px) skew(-6deg); 
+  }
+}
+
+.glitch1:after {
+  animation: glitchBottom1 3s linear infinite;
+  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+  -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+}
+
+@keyframes glitchBottom1 {
+  2%, 64% {
+    transform: translate(-1px, 0);
+  }
+  4%, 60% {
+    transform: translate(-1px, 0);
+  }
+  62% {
+    transform: translate(-11px, 2.5px) skew(10deg); 
+  }
 }

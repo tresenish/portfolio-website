@@ -1,34 +1,95 @@
 div.about {
-    color: white;
-    margin: 4rem auto;
-    width: 70%;
+  color: white;
+  margin: 4rem auto;
+  width: 70%;
+}
 
+h1.about {
+  font-family: "IBM Plex Mono", monospace;
+  margin: 0 0 1rem 0;
+}
+
+p.about {
+  font-family: "Roboto", sans-serif;
+  font-size: 1.2rem;
+}
+
+img.about {
+  height: 15rem;
+  margin: 1rem 1rem 1rem 0;
+  border-radius: 1rem;
+}
+
+img.left {
+  float: left;
+}
+
+img.right {
+  float: right;
+}
+
+@media only screen and (max-width: 800px) {
+  div.about {
+    width: 85%;
   }
-  
-  h1.about {
-    font-family: "IBM Plex Mono", monospace;
-    margin: 0 0 1rem 0;
+}
+
+h1.glitch3 {
+  position: relative;
+  animation: glitch3 3s linear infinite;
+}
+
+@keyframes glitch3 {
+  2%, 64% {
+    transform: translate(1px, 0) skew(0deg);
   }
-  p.about{
-    font-family: "Roboto", sans-serif;
-    font-size: 1.2rem;
+  4%, 60% {
+    transform: translate(-1px, 0) skew(0deg);
   }
-  img.about {
-    height: 15rem;
-    margin: 1rem 1rem 1rem 0;
-    border-radius: 1rem;
+  62% {
+    transform: translate(0, 0) skew(2deg); 
   }
-  
-  img.left {
-    float: left;
+}
+
+h1.glitch3:before,
+h1.glitch3:after {
+  content: attr(title);
+  position: absolute;
+  left: 0;
+}
+
+h1.glitch3:before {
+  animation: glitchTop3 3s linear infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+  -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+}
+
+@keyframes glitchTop3 {
+  2%, 64% {
+    transform: translate(1px, -1px);
   }
-  
-  img.right {
-    float: right;
+  4%, 60% {
+    transform: translate(-1px, 1px);
   }
-  @media only screen and (max-width: 800px) {
-    div.about {
-      width: 85%;
-  
-    }
+  62% {
+    transform: translate(6px, -0.5px) skew(-6deg); 
   }
+}
+
+h1.glitch3:after {
+  animation: glitchBottom3 3s linear infinite;
+  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+  -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+}
+
+@keyframes glitchBottom3 {
+  2%, 64% {
+    transform: translate(-1px, 0);
+  }
+  4%, 60% {
+    transform: translate(-1px, 0);
+  }
+  62% {
+    transform: translate(-11px, 2.5px) skew(10deg); 
+  }
+}

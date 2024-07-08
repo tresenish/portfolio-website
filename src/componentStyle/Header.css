@@ -188,6 +188,8 @@ ul.menu li.menuElem a {
   color: #fff;
   text-transform: uppercase;
   z-index: 3;
+  font-family: "IBM Plex Mono", monospace;
+
 }
 
 .sidebar {

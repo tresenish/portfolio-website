@@ -1,66 +1,129 @@
 div.contact {
     color: white;
     margin: 3rem 0 0 8rem;
-}
-
-h1.contact {
+    width: 70%;
+  }
+  
+  h1.contact {
     font-family: "IBM Plex Mono", monospace;
-}
-
-#mediaLinks {
+  }
+  
+  #mediaLinks {
     display: flex;
     flex-direction: column;
-}
-
-div.socMed {
+  }
+  
+  div.socMed {
     display: inline-block;
     width: fit-content;
-}
-
-a.socMed {
+  }
+  
+  a.socMed {
     display: flex;
     align-items: center;
     margin: 1rem 0;
     white-space: nowrap;
     text-decoration: none; /* Ensure no underline on links */
-}
-
-a.socMed:hover {
+  }
+  
+  a.socMed:hover {
     color: #999;
-}
-
-img.socMed {
+  }
+  
+  img.socMed {
     width: 1.6rem;
     height: 1.6rem;
     margin: 0 0.5rem 0 0;
-}
-
-#github {
+  }
+  
+  #github {
     background-color: white;
     border-radius: 1rem;
-}
-#phone {
+  }
+  #phone {
     background-color: white;
     border-radius: 0.4rem;
     padding: 1px;
-}
-#mail {
+  }
+  #mail {
     background-color: white;
     border-radius: 0.4rem;
-}
-
-h2.socMed {
+  }
+  
+  h2.socMed {
     color: white;
     font-family: "IBM Plex Mono", monospace;
     margin: 0; /* Ensure no extra margin on headings */
-}
-
-h2.socMed:hover {
+  }
+  
+  h2.socMed:hover {
     color: #ccc;
-}
-
-@media only screen and (max-width: 800px) {
+  }
+  
+  @media only screen and (max-width: 800px) {
     div.contact {
-        margin: 3rem 0 0 1rem;
+      margin: 3rem auto;
+      width: 90%;
+    }   
+  }
+  
+  h1.glitch4 {
+    position: relative;
+    animation: glitch4 3s linear infinite;
+  }
+  
+  @keyframes glitch4 {
+    2%, 64% {
+      transform: translate(1px, 0) skew(0deg);
     }
-}
+    4%, 60% {
+      transform: translate(-1px, 0) skew(0deg);
+    }
+    62% {
+      transform: translate(0, 0) skew(2deg); 
+    }
+  }
+  
+  h1.glitch4:before,
+  h1.glitch4:after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+  }
+  
+  h1.glitch4:before {
+    animation: glitchTop4 3s linear infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+    -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+  }
+  
+  @keyframes glitchTop4 {
+    2%, 64% {
+      transform: translate(1px, -1px);
+    }
+    4%, 60% {
+      transform: translate(-1px, 1px);
+    }
+    62% {
+      transform: translate(6px, -0.5px) skew(-6deg); 
+    }
+  }
+  
+  h1.glitch4:after {
+    animation: glitchBottom4 3s linear infinite;
+    clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+    -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+  }
+  
+  @keyframes glitchBottom4 {
+    2%, 64% {
+      transform: translate(-1px, 0);
+    }
+    4%, 60% {
+      transform: translate(-1px, 0);
+    }
+    62% {
+      transform: translate(-11px, 2.5px) skew(10deg); 
+    }
+  }
+  

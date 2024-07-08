@@ -4,7 +4,7 @@ import "../componentStyle/Contact.css";
 export default function Contact() {
   return (
     <div className="contact">
-      <h1 className="contact">Contact</h1>
+      <h1 className="contact glitch4" title="Contact">Contact</h1>
       <div id="mediaLinks">
         <div className="socMed">
           <a className="socMed" href="mailto:korolvolodymyr0@gmail.com">

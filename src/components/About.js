@@ -4,7 +4,7 @@ import "../componentStyle/About.css";
 export default function About() {
   return (
     <div className="about">
-      <h1 className="about">About</h1>
+      <h1 className="about glitch3" title="About">About</h1>
       <p className="about">
         Hello! I'm Volodymyr Korol, a dedicated Full-stack Software Developer
         with a passion for creating innovative and engaging web applications.
@@ -21,7 +21,6 @@ export default function About() {
         back-end technologies.
       </p>
       <br/>
-
       <p className="about">
         I work remotely, which allows me to collaborate effectively with teams
         across different time zones. My professional experience includes
@@ -42,7 +41,6 @@ export default function About() {
         traveling, which broadens my perspective and inspires my creativity.
       </p>
       <br/>
-
       <p className="about">
         I am open to new opportunities and look forward to contributing my
         skills and enthusiasm to exciting projects. Feel free to connect with me
