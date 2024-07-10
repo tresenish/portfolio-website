@@ -4,9 +4,9 @@ import "../componentStyle/About.css";
 export default function About() {
   return (
     <div className="about">
-      <h1 className="about glitch3" title="About">About</h1>
+      <h1 className="about " title="About">About</h1>
       <p className="about">
-        Hello! I'm Volodymyr Korol, a dedicated Full-stack Software Developer
+        Hello! I'm Volodymyr Korol, a dedicated Front-End Developer
         with a passion for creating innovative and engaging web applications.
       </p>
       <img
@@ -36,7 +36,7 @@ export default function About() {
       />
       <br/>
       <p className="about">
-        In addition to my professional pursuits, I am a good student and
+        In addition to my professional pursuits, I am a dedicated student and
         maintain a strong academic record. Outside of work and studies, I enjoy
         traveling, which broadens my perspective and inspires my creativity.
       </p>

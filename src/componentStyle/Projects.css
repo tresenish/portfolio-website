@@ -7,66 +7,6 @@ h1.projects {
   margin: 3rem 0 0 1.5rem;
 }
 
-h1.glitch2 {
-  position: relative;
-  animation: glitch2 3s linear infinite;
-}
-
-@keyframes glitch2 {
-  2%, 64% {
-    transform: translate(1px, 0) skew(0deg);
-  }
-  4%, 60% {
-    transform: translate(-1px, 0) skew(0deg);
-  }
-  62% {
-    transform: translate(0, 0) skew(2deg); 
-  }
-}
-
-h1.glitch2:before,
-h1.glitch2:after {
-  content: attr(title);
-  position: absolute;
-  left: 0;
-}
-
-h1.glitch2:before {
-  animation: glitchTop2 3s linear infinite;
-  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-  -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
-}
-
-@keyframes glitchTop2 {
-  2%, 64% {
-    transform: translate(1px, -1px);
-  }
-  4%, 60% {
-    transform: translate(-1px, 1px);
-  }
-  62% {
-    transform: translate(6px, -0.5px) skew(-6deg); 
-  }
-}
-
-h1.glitch2:after {
-  animation: glitchBottom2 3s linear infinite;
-  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-  -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
-}
-
-@keyframes glitchBottom2 {
-  2%, 64% {
-    transform: translate(-1px, 0);
-  }
-  4%, 60% {
-    transform: translate(-1px, 0);
-  }
-  62% {
-    transform: translate(-11px, 2.5px) skew(10deg); 
-  }
-}
-
 div.projects {
   margin: 0 auto;
   max-width: 1200px;

@@ -62,7 +62,7 @@ export default function Projects() {
 
   return (
     <div className="projects">
-      <h1 className="glitch2 projects" title="Projects">Projects</h1>
+      <h1 className=" projects" title="Projects">Projects</h1>
       <div className="projectGrid">
         {projects.map((project, index) => (
           <div

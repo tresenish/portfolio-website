@@ -5,8 +5,8 @@ export default function Home() {
   return (
     <div>
       <h1 className="home">
-        Hello, I'm <span className="glitch1" title="Volodymyr Korol">Volodymyr Korol</span>.<br />
-        I am a <span className="glitch1" title="full-stack developer">full-stack developer</span>.
+        Hello, I'm <span className="" title="Volodymyr Korol">Volodymyr Korol</span>.<br />
+        I am a <span className="glitch1" title="front-end developer">front-end developer</span>.
       </h1>
       <div className="homeGrid">
         <section className="card LT"> 
@@ -34,12 +34,14 @@ export default function Home() {
               <li className="skills">JavaScript / TypeScript</li>
               <li className="skills">React.js / Redux</li>
               <li className="skills">HTML / CSS</li>
+              <li className="skills">PHP</li>
               <li className="skills">Node.js</li>
               <li className="skills">REST API</li>
               <li className="skills">UI / UX</li>
+              <li className="skills">Figma</li>
               <li className="skills">MySQL</li>
               <li className="skills">MochaJS</li>
-              <li className="skills">Java</li>
+              <li className="skills">Jest</li>
               <li className="skills">Git</li>
             </ul>
           </div>
