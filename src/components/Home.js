@@ -6,7 +6,7 @@ export default function Home() {
     <div>
       <h1 className="home">
         Hello, I'm <span className="" title="Volodymyr Korol">Volodymyr Korol</span>.<br />
-        I am a <span className="glitch1" title="front-end developer">front-end developer</span>.
+        I am a <span className="glitch1" title="front-end developer">Software developer</span>.
       </h1>
       <div className="homeGrid">
         <section className="card LT"> 
@@ -67,7 +67,7 @@ export default function Home() {
           <h2 className="h2Card">Education: </h2>
           <h3 className="h3Card">
             <span className="university">University of Manitoba </span>
-            <span className="year">2020 - 2024</span>
+            <span className="year">2020 - 2023</span>
           </h3>
           <span className="major">Computer Science</span>
           <br/>

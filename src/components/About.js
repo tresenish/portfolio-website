@@ -6,7 +6,7 @@ export default function About() {
     <div className="about">
       <h1 className="about " title="About">About</h1>
       <p className="about">
-        Hello! I'm Volodymyr Korol, a dedicated Front-End Developer
+        Hello! I'm Volodymyr Korol, a dedicated Software Developer
         with a passion for creating innovative and engaging web applications.
       </p>
       <img
@@ -16,8 +16,7 @@ export default function About() {
       />
       <br/>
       <p className="about">
-        Currently pursuing my degree in Computer Science at the University of
-        Manitoba, I have developed a strong foundation in both front-end and
+        I have developed a strong foundation in both front-end and
         back-end technologies.
       </p>
       <br/>

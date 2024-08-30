@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import "../componentStyle/Projects.css";
+import expenseTracker from "../componentStyle/img/expense-tracker.png";
+import expenseTrackerDemo from "../componentStyle/img/expenseTrackerDemo.gif";
 import mixerScreenshot from "../componentStyle/img/mixer-screenshot.png";
 import mixerDemo from "../componentStyle/img/mixerDemo.gif";
 import digiturnScreenshot from "../componentStyle/img/digiturn-screenshot.png";
@@ -23,6 +25,18 @@ export default function Projects() {
   };
 
   const projects = [
+    {
+      title: "AI Expense tracker",
+      link: "https://ai-expense-tracker-alpha.vercel.app/",
+      image: expenseTracker,
+      overlayImage: expenseTrackerDemo,
+      description: "AI categorizes expenses, visualizes data, manages entries.",
+      technologies: ["● React, Redux , REST API (ChatGPT API)"],
+      overlayDescription: `
+        An AI-powered expense tracker that categorizes your expenses automatically,
+         visualizes spending with dynamic charts, supports multiple currencies, and
+          allows easy management of entries. Perfect for keeping track of finances efficiently and smartly.`,
+    },
     {
       title: "Mixer for Spotify",
       link: "https://tresenish.github.io/spotifyproject/",
@@ -105,3 +119,5 @@ export default function Projects() {
     </div>
   );
 }
+
+
