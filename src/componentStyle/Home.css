@@ -114,14 +114,17 @@ span.university {
 }
 
 span.major {
-  color: grey;
+  color: #ddd;
+
   font-family: "IBM Plex Mono", monospace;
 }
 
 span.year {
   text-wrap: nowrap;
 }
-
+p.job-description{
+  color: #999;
+}
 @media only screen and (max-width: 1660px) {
   h3.h3Card {
     font-size: 0.9rem;

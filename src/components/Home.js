@@ -6,7 +6,7 @@ export default function Home() {
     <div>
       <h1 className="home">
         Hello, I'm <span className="" title="Volodymyr Korol">Volodymyr Korol</span>.<br />
-        I am a <span className="glitch1" title="front-end developer">Software developer</span>.
+        I am a <span className="glitch1" title="front-end developer">Fronted Developer</span>.
       </h1>
       <div className="homeGrid">
         <section className="card LT"> 
@@ -50,17 +50,27 @@ export default function Home() {
           <h2 className="h2Card">Experience: </h2>
           <h3 className="h3Card">
             <span className="university">Front-end Developer </span>
-            <span className="year">01/2024 - Present</span>
+            <span className="year">08/2024 - Present</span>
           </h3>
-          <span className="major">Digiturn (Remote)</span>
-
+          <span className="major">PICKL(On-site)</span>
+          <br/>
+          <p className="job-description">
+            Specialized in building modern web applications and landing pages using Next.js, React.js, TypeScript, and Vite.
+            Focused on developing scalable, high-performance solutions for cryptocurrency projects, including pre-claim and airdrop management platforms and responsive landing pages.
+            Ensured seamless user experiences, secure data handling, and integration with blockchain technologies.
+          </p>
           <br/>
           <br/>
           <h3 className="h3Card">
-            <span className="university">Software Developer</span> 
-            <span className="year">02/2023 - 12/2023</span>
+            <span className="university">Front-end Developer </span>
+            <span className="year">01/2024 - 08/2024</span>
           </h3>
-          <span className="major">Freelance (Remote)</span>
+          <span className="major">Digiturn (Remote)</span>
+          <p className="job-description">
+          Experienced in developing responsive and visually appealing landing websites using HTML, CSS, and JavaScript.
+           Focused on delivering ui/ux designs, cross-browser compatibility, and optimized performance.
+            Adept at implementing modern web design principles to create user-friendly interfaces and ensuring seamless functionality across devices.
+          </p>
 
         </section>
         <section className="card big RT">
