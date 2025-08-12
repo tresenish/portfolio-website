@@ -13,7 +13,7 @@ h1.home {
   gap: 1rem;
   color: white;
   width: 80%;
-  margin: 2rem auto;
+  margin: 2rem auto 1rem auto;
 }
 
 .card.big {
@@ -125,6 +125,27 @@ span.year {
 p.job-description{
   color: #999;
 }
+
+.tech-highlight {
+  color: white;
+}
+
+.experienceSection {
+  width: 80%;
+  margin: 0.5rem auto 2rem auto;
+  color: white;
+}
+
+.educationSection {
+  width: 80%;
+  margin: 0.5rem auto;
+  color: white;
+}
+
+.card.experience-full, .card.education-full {
+  width: 100%;
+  color: white;
+}
 @media only screen and (max-width: 1660px) {
   h3.h3Card {
     font-size: 0.9rem;
@@ -140,6 +161,10 @@ p.job-description{
     display: flex;
     flex-wrap: wrap;
     flex-direction: column;
+    width: 90%;
+  }
+
+  .experienceSection, .educationSection {
     width: 90%;
   }
 

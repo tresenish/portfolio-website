@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../componentStyle/Projects.css";
 import expenseTracker from "../componentStyle/img/expense-tracker.png";
 import expenseTrackerDemo from "../componentStyle/img/expenseTrackerDemo.gif";
+import boardroomScreenshot from "../componentStyle/img/boardroom.png";
 import mixerScreenshot from "../componentStyle/img/mixer-screenshot.png";
 import mixerDemo from "../componentStyle/img/mixerDemo.gif";
 import digiturnScreenshot from "../componentStyle/img/digiturn-screenshot.png";
@@ -25,6 +26,18 @@ export default function Projects() {
   };
 
   const projects = [
+    {
+      title: "Boardroom",
+      link: "https://board-room-app.vercel.app/",
+      image: boardroomScreenshot,
+      overlayImage: boardroomScreenshot,
+      description: "Collaborative task management app with Kanban board",
+      technologies: ["● React, TypeScript, Tailwind CSS", "● shadcn/ui, tRPC, Supabase", "● Docker, AI-assisted workflows"],
+      overlayDescription: `
+        Built a collaborative task management app with authentication, Kanban board, real-time updates, and responsive UI.
+        Features include task CRUD operations, drag-and-drop functionality, user assignment, and search capabilities.
+        Developed with modern tech stack including React, TypeScript, Tailwind CSS, shadcn/ui, tRPC, Supabase, and Docker.`,
+    },
     {
       title: "AI Expense tracker",
       link: "https://ai-expense-tracker-alpha.vercel.app/",

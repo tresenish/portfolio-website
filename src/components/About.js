@@ -6,8 +6,9 @@ export default function About() {
     <div className="about">
       <h1 className="about " title="About">About</h1>
       <p className="about">
-        Hello! I'm Volodymyr Korol, a dedicated Software Developer
-        with a passion for creating innovative and engaging web applications.
+        Full-stack Developer delivering high-performance websites, dashboards, and automation tools for SaaS, AI, and crypto
+        projects. Experienced in responsive design, database integration, SQL analytics, and API connectivity, with a focus on
+        clean UI and scalable solutions.
       </p>
       <img
         className="about left"
@@ -16,17 +17,15 @@ export default function About() {
       />
       <br/>
       <p className="about">
-        I have developed a strong foundation in both front-end and
-        back-end technologies.
+        Currently working at Serenity AI where I build and maintain multiple company websites and internal tools using
+        Next.js, TypeScript, Vite, Tailwind, shadcn/ui, and Radix UI. I manage state using Redux and integrate backend
+        functionality with PHP and GraphQL APIs.
       </p>
       <br/>
       <p className="about">
-        I work remotely, which allows me to collaborate effectively with teams
-        across different time zones. My professional experience includes
-        developing and maintaining landing pages, focusing on responsive design,
-        and ensuring cross-browser compatibility. I thrive in dynamic
-        environments and am always eager to learn and implement new
-        technologies.
+        I have experience developing customer tracking dashboards powered by SQL, deploying applications using Vercel,
+        and building automated Telegram bots for user onboarding flows. Throughout my development process, I leverage
+        AI tools like Claude to speed up coding, debugging, and ideation.
       </p>
       <img
         className="about right"
@@ -35,15 +34,13 @@ export default function About() {
       />
       <br/>
       <p className="about">
-        In addition to my professional pursuits, I am a dedicated student and
-        maintain a strong academic record. Outside of work and studies, I enjoy
-        traveling, which broadens my perspective and inspires my creativity.
+        My professional experience spans across cryptocurrency projects, including pre-claim and airdrop management platforms,
+        responsive landing pages, and ensuring seamless user experiences with secure data handling and blockchain technology integration.
       </p>
       <br/>
       <p className="about">
-        I am open to new opportunities and look forward to contributing my
-        skills and enthusiasm to exciting projects. Feel free to connect with me
-        to discuss potential collaborations or job opportunities.
+        I am passionate about creating innovative web applications and am always eager to learn and implement new
+        technologies. Feel free to connect with me to discuss potential collaborations or job opportunities.
       </p>
     </div>
   );
