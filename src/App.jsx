@@ -8,8 +8,6 @@ import Projects from "./components/Projects";
 import About from "./components/About";
 import Contact from "./components/Contact";
 
-import './App.css';
-
 const router = createBrowserRouter(createRoutesFromElements(
   <Route path="/" element={<Root />}>
     <Route index element={<Home />} />
