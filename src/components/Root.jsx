@@ -12,6 +12,14 @@ const NAV_ITEMS = [
     { to: "/contact", label: "Contact" },
 ];
 
+const SOCIALS = [
+    { icon: "fa-github", label: "GitHub", href: "https://github.com/tresenish", external: true },
+    { icon: "fa-linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/volodymyr-korol/", external: true },
+    { icon: "fa-instagram", label: "Instagram", href: "https://www.instagram.com/tresenish/", external: true },
+    { icon: "fa-envelope", label: "Email", href: "mailto:korolvolodymyr0@gmail.com" },
+    { icon: "fa-phone", label: "Phone", href: "tel:+14315883209" },
+];
+
 const navLinkClass = ({ isActive }) =>
     "group flex items-baseline gap-3 py-2 transition-colors " +
     (isActive ? "text-ink" : "text-muted hover:text-ink");
@@ -56,22 +64,16 @@ export default function Root() {
                             </span>
                             Open to opportunities
                         </span>
-                        <p className="font-plex text-[0.7rem] text-faint">Winnipeg, Canada · Remote-friendly</p>
                         <div className="flex gap-5">
-                            <a
-                                className="fa fa-github text-[1.3rem] text-muted hover:text-accent transition-colors"
-                                href="https://github.com/tresenish"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label="GitHub"
-                            ></a>
-                            <a
-                                className="fa fa-linkedin text-[1.3rem] text-muted hover:text-accent transition-colors"
-                                href="https://www.linkedin.com/in/volodymyr-korol/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label="LinkedIn"
-                            ></a>
+                            {SOCIALS.map((s) => (
+                                <a
+                                    key={s.label}
+                                    className={`fa ${s.icon} text-[1.3rem] text-muted hover:text-accent transition-colors`}
+                                    href={s.href}
+                                    {...(s.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                                    aria-label={s.label}
+                                ></a>
+                            ))}
                         </div>
                     </div>
                 </aside>
