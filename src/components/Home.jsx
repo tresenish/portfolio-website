@@ -4,8 +4,11 @@ import { Link } from "react-router-dom";
 import HoloModelViewer from "./HoloModelViewer";
 import ContributionGraph from "./ContributionGraph";
 
-const CAREER_START = new Date(2022, 7);
-const yearsOfExperience = Math.floor((Date.now() - CAREER_START.getTime()) / (365.25 * 24 * 3600 * 1000));
+// Inclusive month count from Aug 2022, matching the Resume page (LinkedIn-style).
+const CAREER_START = { year: 2022, month: 8 };
+const now = new Date();
+const careerMonths = (now.getFullYear() - CAREER_START.year) * 12 + (now.getMonth() + 1 - CAREER_START.month) + 1;
+const yearsOfExperience = Math.floor(careerMonths / 12);
 
 const STATS = [
   { value: `${yearsOfExperience}+`, label: "yrs experience" },

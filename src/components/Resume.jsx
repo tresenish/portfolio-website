@@ -1,5 +1,6 @@
 import React from "react";
 import ContributionGraph from "./ContributionGraph";
+import SectionLabel from "./SectionLabel";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -93,13 +94,6 @@ const SKILLS = [
 ];
 
 const sectionClass = "mb-16 animate-rise motion-reduce:animate-none";
-
-const SectionLabel = ({ title }) => (
-  <div className="flex items-center gap-4 mb-7">
-    <h2 className="font-plex text-[0.72rem] tracking-[0.22em] uppercase text-muted whitespace-nowrap">{title}</h2>
-    <span className="flex-1 h-px bg-hairline" aria-hidden="true"></span>
-  </div>
-);
 
 const xpEntryClass =
   "relative pb-12 last:pb-2 " +

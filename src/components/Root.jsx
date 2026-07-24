@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 const SOCIALS = [
     { icon: "fa-github", label: "GitHub", href: "https://github.com/tresenish", external: true },
     { icon: "fa-linkedin", label: "LinkedIn", href: "https://www.linkedin.com/in/volodymyr-korol/", external: true },
-    { icon: "fa-instagram", label: "Instagram", href: "https://www.instagram.com/tresenish/", external: true },
+    { icon: "fa-instagram", label: "Instagram", href: "https://www.instagram.com/kusipka/", external: true },
     { icon: "fa-envelope", label: "Email", href: "mailto:korolvolodymyr0@gmail.com" },
     { icon: "fa-phone", label: "Phone", href: "tel:+14315883209" },
 ];
