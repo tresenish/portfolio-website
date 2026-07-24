@@ -5,7 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { AnimationMixer, Box3, Vector3 } from "three";
 
 // Playback speed of the embedded shapeshift clip (1 = original 83s loop).
-const ANIMATION_SPEED = 4;
+const ANIMATION_SPEED = 1;
 
 // Morph targets in the clip: 0 = teapot, 1 = fox, 2 = dog.
 const DISABLED_MORPHS = [0, 1, 2];
@@ -13,19 +13,29 @@ const MORPH_COUNT = 3;
 // Bones whose animation tracks are stripped from the clip.
 const DISABLED_BONES = ["teapot_04", "fox_05", "dog_06"];
 
+// useLoader caches the scene between mounts, so measure the bounding box only
+// once (rest pose). Re-measuring on remount would use the mid-animation pose
+// and produce a wrong center, making the rotation orbit instead of spin.
+const fitCache = new WeakMap();
+
+function measureFit(scene) {
+  if (!fitCache.has(scene)) {
+    const box = new Box3().setFromObject(scene);
+    const center = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    fitCache.set(scene, { fitScale: 2.2 / maxDim, offset: center.multiplyScalar(-1).toArray() });
+  }
+  return fitCache.get(scene);
+}
+
 function HoloModel({ url }) {
   const gltf = useLoader(GLTFLoader, url);
   const groupRef = useRef();
   const mixerRef = useRef();
 
   // Center the model and normalize its size so any export fits the tile.
-  const { fitScale, offset } = useMemo(() => {
-    const box = new Box3().setFromObject(gltf.scene);
-    const center = box.getCenter(new Vector3());
-    const size = box.getSize(new Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    return { fitScale: 2.2 / maxDim, offset: center.multiplyScalar(-1).toArray() };
-  }, [gltf]);
+  const { fitScale, offset } = useMemo(() => measureFit(gltf.scene), [gltf]);
 
   useEffect(() => {
     if (gltf.animations.length) {
