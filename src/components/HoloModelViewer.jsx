@@ -1,6 +1,6 @@
 // src/components/HoloModelViewer.jsx
 import React, { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useLoader, useFrame } from "@react-three/fiber";
+import { Canvas, useLoader, useFrame, useThree } from "@react-three/fiber";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { AnimationMixer, Box3, Vector3 } from "three";
 
@@ -37,6 +37,11 @@ function HoloModel({ url }) {
   // Center the model and normalize its size so any export fits the tile.
   const { fitScale, offset } = useMemo(() => measureFit(gltf.scene), [gltf]);
 
+  // Full size on wide screens, proportionally smaller on narrower ones
+  // (e.g. MacBook), with a floor so it never gets tiny on mobile.
+  const canvasWidth = useThree((state) => state.size.width);
+  const responsiveScale = Math.max(0.6, Math.min(1, canvasWidth / 1800));
+
   useEffect(() => {
     if (gltf.animations.length) {
       gltf.animations.forEach((clip) => {
@@ -71,7 +76,7 @@ function HoloModel({ url }) {
   });
 
   return (
-    <group ref={groupRef} scale={fitScale}>
+    <group ref={groupRef} scale={fitScale * responsiveScale}>
       <primitive object={gltf.scene} position={offset} />
     </group>
   );

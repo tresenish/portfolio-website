@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SectionLabel from "./SectionLabel";
 import expenseTracker from "../componentStyle/img/expense-tracker.png";
 import expenseTrackerDemo from "../componentStyle/img/expenseTrackerDemo.gif";
 import boardroomScreenshot from "../componentStyle/img/boardroom.png";
@@ -101,43 +102,60 @@ export default function Projects() {
   };
 
   return (
-    <div className="text-ink mx-auto max-w-[1200px] flex flex-col mb-12 max-nav:mt-8 max-nav:mx-4 max-nav:mb-12">
-      <h1 className="mt-12 ml-6 text-[1.5rem] font-semibold max-nav:mt-6 max-nav:ml-[3%]" title="Projects">Projects</h1>
-      <div className="flex gap-6 flex-wrap mt-6 justify-center max-nav:gap-10">
-        {projects.map((project, index) => (
-          <div
-            key={project.title}
-            role="button"
-            tabIndex={0}
-            aria-label={`Open details for ${project.title}`}
-            className="relative w-[35rem] max-nav:w-full bg-card border border-hairline rounded-xl overflow-hidden flex flex-col cursor-pointer transition-colors hover:border-faint focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-            onClick={() => setOpenIndex(index)}
-            onKeyDown={(e) => handleCardKeyDown(e, index)}
-          >
-            <img className="w-full object-cover" alt="projectDemo" src={project.image} />
-            <div className="p-5 flex flex-col gap-2">
-              <h2 className="flex items-center text-[1.1rem] font-medium">
-                <a
-                  className={projectLinkClass}
-                  href={project.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {project.title}
-                </a>
-                <span className={linkIconClass}>link</span>
-              </h2>
-              <p className="text-[0.9rem] text-muted leading-relaxed">{project.description}</p>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {project.technologies.map((tech) => (
-                  <span className={techPillClass} key={tech}>{tech}</span>
-                ))}
+    <div className="max-w-[64rem] mx-auto px-[8%] pt-16 pb-20 text-ink max-nav:px-[6%] max-nav:pt-12 max-nav:pb-16">
+      <header className="mb-14 max-nav:mb-10 animate-rise motion-reduce:animate-none">
+        <h1 className="text-[1.5rem] font-semibold" title="Projects">Projects</h1>
+        <p className="mt-2 text-[0.95rem] text-muted">Selected work — click any entry for a closer look.</p>
+      </header>
+
+      <section>
+        <SectionLabel title="Selected work" />
+        <ol>
+          {projects.map((project, index) => (
+            <li
+              key={project.title}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open details for ${project.title}`}
+              className="group grid nav:grid-cols-[15rem_1fr] gap-8 max-nav:gap-4 items-start py-9 border-t border-hairline first:border-t-0 first:pt-0 cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent animate-rise motion-reduce:animate-none"
+              style={{ animationDelay: `${0.1 + index * 0.08}s` }}
+              onClick={() => setOpenIndex(index)}
+              onKeyDown={(e) => handleCardKeyDown(e, index)}
+            >
+              <div className="rounded-xl border border-hairline overflow-hidden">
+                <img
+                  className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  alt="projectDemo"
+                  src={project.image}
+                />
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+              <div className="flex flex-col gap-2">
+                <span className="font-plex text-[0.68rem] text-faint group-hover:text-accent transition-colors">
+                  0{index + 1}
+                </span>
+                <h2 className="flex items-center text-[1.15rem] font-medium">
+                  <a
+                    className={projectLinkClass}
+                    href={project.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {project.title}
+                  </a>
+                  <span className={linkIconClass}>link</span>
+                </h2>
+                <p className="text-[0.9rem] text-muted leading-relaxed">{project.description}</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {project.technologies.map((tech) => (
+                    <span className={techPillClass} key={tech}>{tech}</span>
+                  ))}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       {openProject && (
         <div
