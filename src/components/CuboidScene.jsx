@@ -744,9 +744,9 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
 // looks from -z).
 // Ordered screen-left to screen-right (world +x = screen-left).
 const LIGHT_DEFAULTS = [
-  { x: 8.5, y: 5.0, z: -6.0, intensity: 130, on: true },  // light 1 — left (key)
-  { x: -0.3, y: 3.8, z: 4.5, intensity: 50, on: true },   // light 2 — center (deep fill)
-  { x: -10.0, y: 3.5, z: -3.5, intensity: 130, on: true },// light 3 — right (accent)
+  { x: 7.5, y: -2.5, z: -6.5, intensity: 130, on: true }, // light 1 — left (key, low)
+  { x: -0.3, y: 4.3, z: 4.5, intensity: 50, on: true },   // light 2 — center (deep fill)
+  { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: true }, // light 3 — right (accent)
 ];
 const LIGHT_ROWS = [
   { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
