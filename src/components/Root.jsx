@@ -26,13 +26,9 @@ const navLinkClass = ({ isActive }) =>
 
 export default function Root() {
     // Toggles every 3D debug rig (checkpoint markers, debug tile, light panel);
-    // reaches the scene via Outlet context. Persisted across reloads.
-    const [debug, setDebug] = useState(() => localStorage.getItem("debug3d") === "1");
-    const toggleDebug = () =>
-        setDebug((d) => {
-            localStorage.setItem("debug3d", d ? "0" : "1");
-            return !d;
-        });
+    // reaches the scene via Outlet context. Always starts hidden.
+    const [debug, setDebug] = useState(false);
+    const toggleDebug = () => setDebug((d) => !d);
 
     return (
         <div className="min-h-screen bg-page flex flex-col">
