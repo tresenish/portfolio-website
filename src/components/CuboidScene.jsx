@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Shape, ExtrudeGeometry, AxesHelper, BufferAttribute, Color } from "three";
 
-const SPACING = 0.7;       // distance between tile centers along the chain
+const SPACING = 0.55;      // distance between tile centers along the chain
 const SCROLL_SPEED = 1.1;  // marquee drift, world units per second
 const TILT = 0.45;         // turn each tile's face toward the camera (radians)
 // Checkpoints 1..35 are stretched across the full visible width:
@@ -19,6 +19,9 @@ const PITCH = 0.25;        // baseline lean of every tile (radians)
 // ease back to the baseline within KEY_FADE checkpoints of the outer ones.
 const BASE_ROT = [PITCH, TILT, 0];
 const ROT_KEYFRAMES = [
+  { pos: 2, rot: [-2.159, -0.091, 0.279] }, // X -123.7°, Y -5.2°, Z 16.0°
+  { pos: 10, rot: [-1.339, 0.328, 0.279] }, // X -76.7°, Y 18.8°, Z 16.0°
+  { pos: 19, rot: BASE_ROT },               // back to the resting pose
   { pos: 24, rot: [-0.59, 0.25, 0.45] },
   { pos: 35, rot: [-1.89, -0.28, 0.43] },
 ];
@@ -33,18 +36,29 @@ const PATH_Y = [
   -1.01, -1.647, -2.677, -2.054, -2.194, -1.866, -2.04, -2.218, -3.589,
 ];
 
-// Smooth curve through PATH_Y at checkpoint position p (clamped outside 1..36).
-function pathAt(p) {
-  const n = PATH_Y.length;
+// Depth per checkpoint (world z; 0 = the ribbon's original plane, negative =
+// toward the camera). Sculpted by dragging markers horizontally, then baked
+// back here like PATH_Y. Current shape: a full-width arc — both screen edges
+// closest to the viewer (-5), checkpoint 21 pushed away to +5.
+const PATH_Z = [
+  -5.0, -4.93, -4.72, -4.39, -3.96, -3.44, -2.84, -2.18, -1.48,
+  -0.75, 0.0, 0.75, 1.48, 2.18, 2.84, 3.44, 3.96, 4.39,
+  4.72, 4.93, 5.0, 4.85, 4.45, 3.82, 3.02, 2.09, 1.06,
+  0.0, -1.06, -2.09, -3.02, -3.82, -4.45, -4.85, -5.0, -5.0,
+];
+
+// Smooth curve through a checkpoint-sample array at position p (clamped outside 1..36).
+function sampleCurve(arr, p) {
+  const n = arr.length;
   const t = p - 1; // 0-based along the samples
-  if (t <= 0) return PATH_Y[0];
-  if (t >= n - 1) return PATH_Y[n - 1];
+  if (t <= 0) return arr[0];
+  if (t >= n - 1) return arr[n - 1];
   const i = Math.floor(t);
   const f = t - i;
-  const y0 = PATH_Y[Math.max(0, i - 1)];
-  const y1 = PATH_Y[i];
-  const y2 = PATH_Y[i + 1];
-  const y3 = PATH_Y[Math.min(n - 1, i + 2)];
+  const y0 = arr[Math.max(0, i - 1)];
+  const y1 = arr[i];
+  const y2 = arr[i + 1];
+  const y3 = arr[Math.min(n - 1, i + 2)];
   // Catmull-Rom
   return (
     y1 +
@@ -94,8 +108,9 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// palette in the spirit of the reference (pinks / violets / blues)
-const COLORS = ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"];
+// all white for now; previous palette (pinks / violets / blues) kept for reference:
+// ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"]
+const COLORS = ["#ffffff"];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
 // only the 4 footprint corners rounded.
@@ -157,7 +172,7 @@ function makeDebugTileGeometry() {
   return geo;
 }
 
-function TileRibbon({ geometry }) {
+function TileRibbon({ geometry, debug }) {
   const ribbonRef = useRef();
   // Fill the visible width (plus margin) with tiles; they wrap around the
   // span like a conveyor belt, so the ribbon scrolls forever.
@@ -170,35 +185,46 @@ function TileRibbon({ geometry }) {
   const step = viewportWidth / (CHECKPOINT_MAX - 1);
   const pOf = (x) => (originX - x) / step + 1;
 
-  // Fixed hand-tuned path baked into PATH_Y (no randomness anymore).
-  const basePathY = useMemo(() => {
-    return (x) => pathAt((originX - x) / step + 1);
-  }, [originX, step]);
-
-  // Hand-edited per-checkpoint offsets (dragged markers), blended smoothly
-  // between neighboring checkpoints on top of the generated path.
+  // Hand-edited per-checkpoint offsets (dragged markers): { [p]: { y, z } },
+  // blended smoothly between neighboring checkpoints on top of the baked path.
   const [offsets, setOffsets] = useState({});
-  const pathY = useMemo(() => {
-    return (x) => {
+  const { pathY, pathZ } = useMemo(() => {
+    const make = (arr, axis) => (x) => {
       const p = (originX - x) / step + 1;
       const i = Math.floor(p);
       const t = smooth(p - i);
-      const o = lerp(offsets[i] || 0, offsets[i + 1] || 0, t);
-      return basePathY(x) + o;
+      const o = lerp(offsets[i]?.[axis] || 0, offsets[i + 1]?.[axis] || 0, t);
+      return sampleCurve(arr, p) + o;
     };
-  }, [basePathY, offsets, originX, step]);
+    return { pathY: make(PATH_Y, "y"), pathZ: make(PATH_Z, "z") };
+  }, [offsets, originX, step]);
 
-  // Drag a checkpoint marker up/down to edit the path.
-  const dragRef = useRef(null); // { index, py, start }
+  // Selected checkpoint — a plain click (no drag) on a marker opens its
+  // coordinate editor next to the marker.
+  const [selected, setSelected] = useState(null);
+
+  // Drag a checkpoint marker to edit the path: vertical = y, horizontal = z
+  // (x is the travel direction, so screen-horizontal is free for depth;
+  // dragging right pulls the checkpoint toward the camera).
+  const dragRef = useRef(null); // { index, px, py, startY, startZ, moved }
   const worldPerPx = useThree((s) => s.viewport.height / s.size.height);
   useEffect(() => {
     const move = (e) => {
       const d = dragRef.current;
       if (!d) return;
+      // ignore sub-4px jitter so a click doesn't nudge the path
+      if (Math.abs(e.clientX - d.px) + Math.abs(e.clientY - d.py) > 4) d.moved = true;
+      if (!d.moved) return;
       const dy = (d.py - e.clientY) * worldPerPx; // screen up = world up
-      setOffsets((prev) => ({ ...prev, [d.index]: d.start + dy }));
+      const dz = (d.px - e.clientX) * worldPerPx; // screen right = toward camera (-z)
+      setOffsets((prev) => ({
+        ...prev,
+        [d.index]: { y: d.startY + dy, z: d.startZ + dz },
+      }));
     };
     const up = () => {
+      const d = dragRef.current;
+      if (d && !d.moved) setSelected((s) => (s === d.index ? null : d.index));
       dragRef.current = null;
       document.body.style.cursor = "";
     };
@@ -251,6 +277,7 @@ function TileRibbon({ geometry }) {
       const x = warpX(u);
       tile.position.x = x;
       tile.position.y = pathY(x); // fixed curvy path in space
+      tile.position.z = pathZ(x); // sculpted depth along the same path
       // rotation choreography, keyed by checkpoint position (1 = screen-left edge)
       const p = pOf(x);
       const [rx, ry, rz] = rotAtPos(p);
@@ -264,21 +291,27 @@ function TileRibbon({ geometry }) {
     const pts = [];
     for (let p = 1; p <= CHECKPOINT_MAX; p++) {
       const x = originX - (p - 1) * step;
-      pts.push({ p, x, y: pathY(x) });
+      pts.push({ p, x, y: pathY(x), z: pathZ(x) });
     }
     return pts;
-  }, [originX, step, pathY]);
+  }, [originX, step, pathY, pathZ]);
 
-  // Copy the whole edited path (final y per checkpoint) to the clipboard.
+  // Copy the whole edited path as ready-to-paste PATH_Y / PATH_Z source.
   const [copied, setCopied] = useState(false);
   const copyPath = () => {
-    const text = checkpoints
-      .map(({ p, y }) => {
-        const off = offsets[p];
-        const offNote = off ? ` (offset ${off > 0 ? "+" : ""}${off.toFixed(2)})` : "";
-        return `checkpoint ${p}: y ${y.toFixed(3)}${offNote}`;
-      })
-      .join("\n");
+    const fmt = (v) => {
+      const s = v.toFixed(3);
+      return s === "-0.000" ? "0.000" : s;
+    };
+    // checkpoints cover 1..35; keep the baked 36th (off-screen right) sample
+    const ys = [...checkpoints.map((c) => fmt(c.y)), fmt(PATH_Y[PATH_Y.length - 1])];
+    const zs = [...checkpoints.map((c) => fmt(c.z)), fmt(PATH_Z[PATH_Z.length - 1])];
+    const wrap = (name, vals) => {
+      const lines = [];
+      for (let i = 0; i < vals.length; i += 9) lines.push("  " + vals.slice(i, i + 9).join(", ") + ",");
+      return `const ${name} = [\n${lines.join("\n")}\n];`;
+    };
+    const text = `${wrap("PATH_Y", ys)}\n${wrap("PATH_Z", zs)}`;
     const done = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
@@ -308,22 +341,43 @@ function TileRibbon({ geometry }) {
       </group>
 
       {/* checkpoint markers — static, tiles flow through them; drag to edit path */}
+      {debug && (
       <group>
-        {checkpoints.map(({ p, x, y }) => (
-          <group key={p} position={[x, y, 0]}>
-            <mesh>
+        {checkpoints.map(({ p, x, y, z }) => (
+          <group key={p} position={[x, y, z]}>
+            {/* renderOrder + depthTest off so markers always draw above the tiles;
+                red = inside the fast zone (speed > 1), orange = hand-edited */}
+            <mesh renderOrder={10}>
               <sphereGeometry args={[0.07, 12, 12]} />
-              <meshBasicMaterial color={offsets[p] ? "#fb923c" : "#facc15"} />
+              <meshBasicMaterial
+                color={
+                  selected === p
+                    ? "#6ea8fe"
+                    : offsets[p]?.y || offsets[p]?.z
+                      ? "#fb923c"
+                      : speedAt(p) > 1
+                        ? "#ef4444"
+                        : "#facc15"
+                }
+                depthTest={false}
+              />
             </mesh>
             {/* invisible fat hit area so the marker is easy to grab */}
             <mesh
               onPointerDown={(e) => {
                 e.stopPropagation();
-                dragRef.current = { index: p, py: e.clientY, start: offsets[p] || 0 };
-                document.body.style.cursor = "ns-resize";
+                dragRef.current = {
+                  index: p,
+                  px: e.clientX,
+                  py: e.clientY,
+                  startY: offsets[p]?.y || 0,
+                  startZ: offsets[p]?.z || 0,
+                  moved: false,
+                };
+                document.body.style.cursor = "move";
               }}
               onPointerOver={() => {
-                if (!dragRef.current) document.body.style.cursor = "ns-resize";
+                if (!dragRef.current) document.body.style.cursor = "move";
               }}
               onPointerOut={() => {
                 if (!dragRef.current) document.body.style.cursor = "";
@@ -335,24 +389,75 @@ function TileRibbon({ geometry }) {
             <Html
               center
               position={[0, -0.5, 0]}
-              style={{ pointerEvents: "none" }}
-              zIndexRange={[40, 30]}
+              style={{ pointerEvents: selected === p ? "auto" : "none" }}
+              zIndexRange={selected === p ? [50, 41] : [40, 30]}
             >
-              <div className="font-plex text-[0.62rem] text-ink bg-page/70 rounded px-1 leading-tight text-center">
-                {p}
-                {offsets[p] ? (
-                  <div className="text-[0.55rem] text-accent">
-                    {offsets[p] > 0 ? "+" : ""}
-                    {offsets[p].toFixed(2)}
+              {selected === p ? (
+                /* per-checkpoint coordinate editor (click marker to toggle) */
+                <div className="font-plex text-[0.62rem] leading-relaxed text-ink bg-page/90 border border-hairline rounded-md px-2 py-1.5 text-left select-none">
+                  <div className="mb-0.5 text-muted">checkpoint {p}</div>
+                  {["y", "z"].map((axis) => (
+                    <div key={axis} className="flex items-center gap-1.5 py-0.5">
+                      <span className="w-3 text-muted">{axis}</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={(axis === "y" ? y : z).toFixed(2)}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          if (Number.isNaN(v)) return;
+                          const base = (axis === "y" ? PATH_Y : PATH_Z)[p - 1];
+                          setOffsets((prev) => ({
+                            ...prev,
+                            [p]: { y: 0, z: 0, ...prev[p], [axis]: v - base },
+                          }));
+                        }}
+                        className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+                      />
+                    </div>
+                  ))}
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <button
+                      onClick={() =>
+                        setOffsets(({ [p]: _drop, ...rest }) => rest)
+                      }
+                      className="border border-hairline rounded px-1.5 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+                    >
+                      clear
+                    </button>
+                    <button
+                      onClick={() => setSelected(null)}
+                      className="border border-hairline rounded px-1.5 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+                    >
+                      close
+                    </button>
                   </div>
-                ) : null}
-              </div>
+                </div>
+              ) : (
+                <div className="font-plex text-[0.62rem] text-ink bg-page/70 rounded px-1 leading-tight text-center">
+                  {p}
+                  {offsets[p]?.y ? (
+                    <div className="text-[0.55rem] text-accent">
+                      y {offsets[p].y > 0 ? "+" : ""}
+                      {offsets[p].y.toFixed(2)}
+                    </div>
+                  ) : null}
+                  {offsets[p]?.z ? (
+                    <div className="text-[0.55rem] text-accent">
+                      z {offsets[p].z > 0 ? "+" : ""}
+                      {offsets[p].z.toFixed(2)}
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </Html>
           </group>
         ))}
       </group>
+      )}
 
       {/* copy the full edited path (bottom-center, inside the visible area) */}
+      {debug && (
       <Html center position={[0, -3.2, 0]} zIndexRange={[40, 30]}>
         <button
           className="font-plex text-[0.62rem] text-ink bg-page/80 border border-hairline rounded px-2 py-1 cursor-pointer hover:text-accent transition-colors whitespace-nowrap"
@@ -361,6 +466,7 @@ function TileRibbon({ geometry }) {
           {copied ? "copied!" : "copy path"}
         </button>
       </Html>
+      )}
     </>
   );
 }
@@ -503,7 +609,7 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
       </group>
 
       {/* anchored on the tile's screen-right side (world -x), grows away from it */}
-      <Html position={[-2.9, 0.6, 0]} style={{ whiteSpace: "nowrap", transform: "translateY(-160px)" }}>
+      <Html position={[-8.0, 2.0, 0]} style={{ whiteSpace: "nowrap" }}>
         <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-2.5 py-1.5 select-none">
           {["x", "y", "z"].map((axis) => (
             <div key={axis} className="flex items-center gap-2 py-0.5">
@@ -548,6 +654,26 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
               reset
             </button>
           </div>
+          {/* load a choreography keyframe onto the tile to inspect / retune it */}
+          <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-1.5 flex-wrap">
+            <span className="text-muted">show kf</span>
+            {ROT_KEYFRAMES.map(({ pos, rot: kfRot }) => (
+              <button
+                key={pos}
+                onClick={() => {
+                  setRot({ x: kfRot[0], y: kfRot[1], z: kfRot[2] });
+                  setCheckpoint(String(pos));
+                }}
+                className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                  checkpoint === String(pos)
+                    ? "border-accent text-accent"
+                    : "border-hairline text-ink-dim hover:text-ink hover:border-accent-dim"
+                }`}
+              >
+                {pos}
+              </button>
+            ))}
+          </div>
           <div className="mt-1.5 pt-1.5 border-t border-hairline grid grid-cols-2 gap-x-3">
             {Object.entries(SIDE_LEGEND).map(([side, label]) => (
               <div key={side} className="flex items-center gap-1.5">
@@ -565,7 +691,198 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
   );
 }
 
-export default function CuboidScene() {
+// Two movable lamps with an info panel: pick a light (1/2), scrub the axis
+// labels (or type values) to reposition it and adjust intensity live, toggle
+// it on/off, then copy the result as ready-to-paste JSX props. X scrub is
+// inverted so dragging right moves the lamp screen-right (world -x, camera
+// looks from -z).
+// Ordered screen-left to screen-right (world +x = screen-left).
+const LIGHT_DEFAULTS = [
+  { x: 8.5, y: 5.0, z: -6.0, intensity: 90, on: true },   // light 1 — left (key)
+  { x: -1.8, y: 3.3, z: 4.5, intensity: 10, on: true },   // light 2 — center (deep fill)
+  { x: -10.0, y: 2.5, z: -2.5, intensity: 60, on: true }, // light 3 — right (accent)
+];
+const LIGHT_ROWS = [
+  { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
+  { key: "y", label: "Y (height)", color: AXIS_COLORS.y, scale: 0.03 },
+  { key: "z", label: "Z (depth)", color: AXIS_COLORS.z, scale: 0.03 },
+  { key: "intensity", label: "intensity", color: "#facc15", scale: 0.8 },
+];
+
+function DebugLight({ debug }) {
+  const [lights, setLights] = useState(LIGHT_DEFAULTS);
+  const [active, setActive] = useState(0);
+  const light = lights[active];
+  const drag = useRef(null); // { key, px, py, scale }
+
+  // Patch only the currently selected light.
+  const patchActive = (patch) =>
+    setLights((ls) => ls.map((l, i) => (i === active ? { ...l, ...patch(l) } : l)));
+
+  useEffect(() => {
+    const onMove = (e) => {
+      const d = drag.current;
+      if (!d) return;
+      const dx = e.clientX - d.px;
+      const dy = e.clientY - d.py;
+      d.px = e.clientX;
+      d.py = e.clientY;
+      // drag right or up = increase (X row inverts via negative scale)
+      setLights((ls) =>
+        ls.map((l, i) => {
+          if (i !== active) return l;
+          const v = l[d.key] + (dx - dy) * d.scale;
+          return { ...l, [d.key]: d.key === "intensity" ? Math.max(0, v) : v };
+        })
+      );
+    };
+    const onUp = () => {
+      drag.current = null;
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [active]);
+
+  const startDrag = (key, scale) => (e) => {
+    e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+    drag.current = { key, px: e.clientX, py: e.clientY, scale };
+  };
+
+  const setValue = (key) => (e) => {
+    const v = parseFloat(e.target.value);
+    if (!Number.isNaN(v)) patchActive(() => ({ [key]: v }));
+  };
+
+  const [copied, setCopied] = useState(false);
+  const copyLights = async () => {
+    const text = lights
+      .map(
+        (l, i) =>
+          `${l.on ? "" : "// (off) "}position={[${l.x.toFixed(1)}, ${l.y.toFixed(1)}, ${l.z.toFixed(1)}]} intensity={${Math.round(l.intensity)}}`
+      )
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      window.prompt("Copy:", text);
+    }
+  };
+
+  return (
+    <>
+      {lights.map(
+        (l, i) =>
+          l.on && (
+            <pointLight
+              key={i}
+              position={[l.x, l.y, l.z]}
+              intensity={l.intensity}
+              decay={2}
+              castShadow
+              shadow-intensity={0.55}
+              shadow-mapSize-width={1024}
+              shadow-mapSize-height={1024}
+              shadow-camera-near={0.5}
+              shadow-camera-far={60}
+              shadow-radius={16}
+              shadow-blurSamples={24}
+            />
+          )
+      )}
+      {debug && (
+      <>
+      {/* lamp markers — yellow = selected, grey = the other one, faded = off */}
+      {lights.map((l, i) => (
+        <mesh key={i} position={[l.x, l.y, l.z]} renderOrder={11}>
+          <sphereGeometry args={[0.14, 12, 12]} />
+          <meshBasicMaterial
+            color={i === active ? "#facc15" : "#8b9096"}
+            transparent
+            opacity={l.on ? 1 : 0.35}
+            depthTest={false}
+          />
+        </mesh>
+      ))}
+
+      {/* panel sits just left of the debug tile's info box (which anchors at
+          world [-8, 5.6]); this one grows rightward toward it */}
+      <Html position={[-3.2, 5.6, 0]} style={{ whiteSpace: "nowrap" }}>
+        <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-2.5 py-1.5 select-none">
+          <div className="mb-1 flex items-center gap-1.5">
+            {lights.map((l, i) => (
+              <button
+                key={i}
+                onClick={() => setActive(i)}
+                className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                  active === i
+                    ? "border-accent text-accent"
+                    : "border-hairline text-ink-dim hover:text-ink hover:border-accent-dim"
+                }`}
+              >
+                light {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => patchActive((l) => ({ on: !l.on }))}
+              title="toggle the selected light"
+              className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                light.on
+                  ? "border-emerald-400/60 text-emerald-300"
+                  : "border-hairline text-faint hover:text-ink"
+              }`}
+            >
+              {light.on ? "on" : "off"}
+            </button>
+          </div>
+          {LIGHT_ROWS.map(({ key, label, color, scale }) => (
+            <div key={key} className="flex items-center gap-2 py-0.5">
+              <span
+                className="w-24 cursor-ew-resize"
+                style={{ color }}
+                onPointerDown={startDrag(key, scale)}
+                title="drag to scrub"
+              >
+                {label}
+              </span>
+              <input
+                type="number"
+                step={key === "intensity" ? "10" : "0.5"}
+                value={key === "intensity" ? Math.round(light[key]) : light[key].toFixed(1)}
+                onChange={setValue(key)}
+                className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+              />
+            </div>
+          ))}
+          <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
+            <button
+              onClick={copyLights}
+              className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+            >
+              {copied ? "copied!" : "copy"}
+            </button>
+            <button
+              onClick={() => patchActive(() => ({ ...LIGHT_DEFAULTS[active] }))}
+              className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+            >
+              reset
+            </button>
+          </div>
+        </div>
+      </Html>
+      </>
+      )}
+    </>
+  );
+}
+
+export default function CuboidScene({ debug = false }) {
   const geometry = useMemo(() => makeTileGeometry(), []);
   const debugGeometry = useMemo(() => makeDebugTileGeometry(), []);
   return (
@@ -576,25 +893,15 @@ export default function CuboidScene() {
         camera={{ zoom: 55, position: [0, 1.2, -14] }}
         onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
       >
-        <ambientLight intensity={0.5} />
-        {/* far screen-left (world +x, camera looks from -z), high above the tiles */}
-        <directionalLight
-          position={[18, 10, 0]}
-          intensity={1.3}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={15}
-          shadow-camera-bottom={-15}
-          shadow-camera-near={0.1}
-          shadow-camera-far={60}
-          shadow-radius={10}
-          shadow-blurSamples={16}
-        />
-        <TileRibbon geometry={geometry} />
-        <DebugTile geometry={debugGeometry} />
+        <ambientLight intensity={0.28} />
+        {/* lamp hung high above the ribbon, pulled slightly toward the camera.
+            decay=2 is physical inverse-square falloff: the lower a tile dips,
+            the farther it is from the lamp, the darker it gets — for free.
+            With decay 2, intensity is in candela-like units, hence the big number.
+            DebugLight wraps the point light with a live position/intensity panel. */}
+        <DebugLight debug={debug} />
+        <TileRibbon geometry={geometry} debug={debug} />
+        {debug && <DebugTile geometry={debugGeometry} />}
       </Canvas>
     </div>
   );

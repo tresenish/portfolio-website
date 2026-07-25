@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 // import ThreeDModelViewer from "./ThreeDModelViewer"; // cat model, parked for now
 // import HoloModelViewer from "./HoloModelViewer"; // shapeshifter model, parked for now
 import CuboidScene from "./CuboidScene";
@@ -19,10 +19,11 @@ const STATS = [
 
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
+  const { debug } = useOutletContext() ?? {};
   return (
     <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
       <div className="absolute inset-0">
-        <CuboidScene />
+        <CuboidScene debug={debug} />
       </div>
 
       {/* pointer-events-none so the canvas stays interactive; re-enabled on content */}

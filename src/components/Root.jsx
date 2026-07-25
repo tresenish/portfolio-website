@@ -1,5 +1,5 @@
 // Root.js
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import Footer from "./Footer";
 import avatar from "../componentStyle/img/avatar.jpg";
@@ -25,6 +25,15 @@ const navLinkClass = ({ isActive }) =>
     (isActive ? "text-ink" : "text-muted hover:text-ink");
 
 export default function Root() {
+    // Toggles every 3D debug rig (checkpoint markers, debug tile, light panel);
+    // reaches the scene via Outlet context. Persisted across reloads.
+    const [debug, setDebug] = useState(() => localStorage.getItem("debug3d") === "1");
+    const toggleDebug = () =>
+        setDebug((d) => {
+            localStorage.setItem("debug3d", d ? "0" : "1");
+            return !d;
+        });
+
     return (
         <div className="min-h-screen bg-page flex flex-col">
             {/* topbar */}
@@ -57,6 +66,17 @@ export default function Root() {
                 </nav>
 
                 <div className="flex items-center gap-4 max-nav:hidden">
+                    <button
+                        onClick={toggleDebug}
+                        title="toggle 3D debug tools"
+                        className={`font-plex text-[0.62rem] border rounded px-2 py-1 transition-colors cursor-pointer ${
+                            debug
+                                ? "border-accent text-accent"
+                                : "border-hairline text-muted hover:text-ink hover:border-accent-dim"
+                        }`}
+                    >
+                        debug
+                    </button>
                     {SOCIALS.map((s) => (
                         <a
                             key={s.label}
@@ -124,7 +144,7 @@ export default function Root() {
                 )}
 
                 <main className="flex-1 min-w-0 bg-page">
-                    <Outlet />
+                    <Outlet context={{ debug }} />
                 </main>
             </div>
             <Footer />
