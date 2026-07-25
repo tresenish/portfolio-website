@@ -17,12 +17,11 @@ const STATS = [
   { value: "10+", label: "technologies" },
 ];
 
-/* Liquid-glass panel: translucent white, heavy blur + saturation boost, a
-   bright top edge highlight and soft drop shadow so it reads as floating
-   glass over the ribbon. */
+/* Bottom cards: solid white so the dark bottom gradient can't shade through,
+   with a glass-like edge and a soft lift shadow. */
 const GLASS =
-  "rounded-2xl border border-white/35 bg-white/10 backdrop-blur-lg backdrop-saturate-150 " +
-  "shadow-[0_8px_32px_rgba(28,30,33,0.08),inset_0_1px_0_rgba(255,255,255,0.45)]";
+  "rounded-2xl border border-hairline bg-white " +
+  "shadow-[0_8px_32px_rgba(28,30,33,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]";
 
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
