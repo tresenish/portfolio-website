@@ -119,12 +119,13 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// graphite/slate ramp, a few steps lighter than the page bg — the ribbon
-// reads as carved from the background, highlights come from the light rig
-// (7 is coprime with the i*3 stride, so all stops get used and neighbors
-// never repeat). For reference — previous blue ramp: ["#f2f8ff", "#e0eefe",
-// "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"]; all white: ["#ffffff"]
-const COLORS = ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"];
+// white ramp with a whisper of cool grey — on the white page the ribbon is
+// drawn entirely by the light rig, shadows, and grain (7 is coprime with the
+// i*3 stride, so all stops get used and neighbors never repeat). For
+// reference — graphite ramp: ["#3a3d43", "#43474e", "#4d5159", "#575c64",
+// "#61666f", "#6b717b", "#757c86"]; blue ramp: ["#f2f8ff", "#e0eefe",
+// "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"]
+const COLORS = ["#ffffff", "#fafbfc", "#f5f7f9", "#f0f3f5", "#ebeef1", "#e5e9ed", "#dfe4e9"];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
 // only the 4 footprint corners rounded.
