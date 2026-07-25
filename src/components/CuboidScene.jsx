@@ -14,7 +14,7 @@ import {
 } from "three";
 
 const SPACING = 0.55;      // distance between tile centers along the chain
-const SCROLL_SPEED = 1.1;  // marquee drift, world units per second
+const SCROLL_SPEED = 1.0;  // marquee drift, world units per second
 const TILT = 0.45;         // turn each tile's face toward the camera (radians)
 // Checkpoints 1..35 are stretched across the full visible width:
 // 1 = left screen edge, 35 = right screen edge (step derived from viewport).
@@ -27,10 +27,12 @@ const PITCH = 0.25;        // baseline lean of every tile (radians)
 // ease back to the baseline within KEY_FADE checkpoints of the outer ones.
 const BASE_ROT = [PITCH, TILT, 0];
 const ROT_KEYFRAMES = [
+  { pos: 1, rot: [-2.598, -0.396, 0.327] }, // X -148.9°, Y -22.7°, Z 18.7°
   { pos: 2, rot: [-2.159, -0.091, 0.279] }, // X -123.7°, Y -5.2°, Z 16.0°
-  { pos: 10, rot: [-1.339, 0.328, 0.279] }, // X -76.7°, Y 18.8°, Z 16.0°
-  { pos: 19, rot: BASE_ROT },               // back to the resting pose
-  { pos: 24, rot: [-0.59, 0.25, 0.45] },
+  { pos: 10, rot: [-1.339, -0.021, 0.492] }, // X -76.7°, Y -1.2°, Z 28.2°
+  { pos: 19, rot: [-2.612, -0.452, 0.112] }, // X -149.6°, Y -25.9°, Z 6.4°
+  { pos: 21, rot: [-2.310, -0.452, 0.112] }, // X -132.4°, Y -25.9°, Z 6.4° — at the spike
+  { pos: 27, rot: [-1.171, 0.212, 0.605] },  // X -67.1°, Y 12.2°, Z 34.7° — recover in the U
   { pos: 35, rot: [-1.89, -0.28, 0.43] },
 ];
 const KEY_FADE = 3;
@@ -39,9 +41,9 @@ const KEY_FADE = 3;
 // (1 = visible screen-left edge). Interpolated with a Catmull-Rom spline.
 const PATH_Y = [
   0.502, -0.192, -0.461, -0.391, -0.353, -0.268, -0.111, -0.017, 0.151,
-  0.235, 0.131, 0.005, -0.575, -0.775, -0.628, -0.660, -0.732, -0.898,
-  -0.891, -0.209, 2.403, 1.417, 0.497, 0.036, -0.236, -0.375, -0.500,
-  0.000, 0.194, 0.402, 0.584, 0.537, 0.286, 0.085, 0.162, 0.000,
+  0.235, 0.367, 0.205, 0.101, -0.104, -0.470, -0.726, -0.979, -0.934,
+  -0.803, -0.209, 2.403, 1.417, 0.497, 0.036, -0.236, -0.375, -0.500,
+  0.000, 0.194, 0.402, 0.584, 0.537, 0.286, 0.085, -0.300, -1.000,
 ];
 
 // Depth per checkpoint (world z; 0 = the ribbon's original plane, negative =
@@ -50,8 +52,8 @@ const PATH_Y = [
 // closest to the viewer (-5), checkpoint 21 pushed away to +5.
 const PATH_Z = [
   -5.000, -4.930, -4.720, -4.390, -3.960, -3.440, -2.840, -2.180, -1.480,
-  -0.750, 0.000, 0.750, 1.480, 2.180, 2.840, 3.440, 3.960, 4.390,
-  4.720, 4.930, 5.000, 4.850, 4.450, 3.776, 3.031, 2.157, 1.060,
+  -0.750, -0.048, 0.711, 1.353, 2.044, 2.744, 3.431, 3.914, 4.380,
+  4.724, 4.930, 5.000, 4.850, 4.450, 3.776, 3.031, 2.157, 1.060,
   0.000, -1.121, -2.138, -3.101, -3.838, -4.508, -4.869, -5.000, -5.000,
 ];
 
@@ -82,7 +84,7 @@ const smooth = (t) => t * t * (3 - 2 * t); // smoothstep
 // Fast zone: tiles accelerate between these checkpoints (they travel from
 // higher positions to lower ones), which also stretches the gaps there.
 // speed: 1 = disabled (uniform flow); raise to re-enable the warp.
-const FAST_ZONE = { from: 23, to: 27, ramp: 2, speed: 1 };
+const FAST_ZONE = { from: 27, to: 30, ramp: 2, speed: 2.0 };
 
 function speedAt(p) {
   const { from, to, ramp, speed } = FAST_ZONE;
@@ -117,9 +119,8 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// blue ramp — seven stops from ice white down to true azure, straight through
-// the site accent (#6ea8fe), no violet drift. 7 is coprime with the (i*3)
-// stride, so every stop gets used and neighbors never repeat. Older palettes:
+// light blue ramp, near-white to soft cornflower (7 is coprime with the i*3
+// stride, so all stops get used and neighbors never repeat). For reference:
 // all white: ["#ffffff"]; pinks/violets: ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"]
 const COLORS = ["#f2f8ff", "#e0eefe", "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"];
 
