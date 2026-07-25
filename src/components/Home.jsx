@@ -49,7 +49,7 @@ export default function Home() {
             </Link>
             <Link
               to="/contact"
-              className="rounded-full border border-hairline px-5 py-2 text-[0.85rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
+              className="rounded-full border border-faint px-5 py-2 text-[0.85rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
             >
               Get in touch
             </Link>

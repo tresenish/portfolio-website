@@ -27,8 +27,8 @@ const PITCH = 0.25;        // baseline lean of every tile (radians)
 // ease back to the baseline within KEY_FADE checkpoints of the outer ones.
 const BASE_ROT = [PITCH, TILT, 0];
 const ROT_KEYFRAMES = [
-  { pos: 1, rot: [-2.598, -0.396, 0.327] }, // X -148.9°, Y -22.7°, Z 18.7°
-  { pos: 2, rot: [-2.159, -0.091, 0.279] }, // X -123.7°, Y -5.2°, Z 16.0°
+  { pos: 1, rot: [-2.038, -0.154, 0.310] }, // X -116.7°, Y -8.8°, Z 17.7°
+  { pos: 2, rot: [-2.159, -0.091, 0.490] }, // X -123.7°, Y -5.2°, Z 28.1°
   { pos: 10, rot: [-1.339, -0.021, 0.492] }, // X -76.7°, Y -1.2°, Z 28.2°
   { pos: 19, rot: [-2.612, -0.452, 0.112] }, // X -149.6°, Y -25.9°, Z 6.4°
   { pos: 21, rot: [-2.310, -0.452, 0.112] }, // X -132.4°, Y -25.9°, Z 6.4° — at the spike
@@ -42,8 +42,8 @@ const KEY_FADE = 3;
 const PATH_Y = [
   0.502, -0.192, -0.461, -0.391, -0.353, -0.268, -0.111, -0.017, 0.151,
   0.235, 0.367, 0.205, 0.101, -0.104, -0.470, -0.726, -0.979, -0.934,
-  -0.803, -0.209, 2.403, 1.417, 0.497, 0.036, -0.236, -0.375, -0.500,
-  0.000, 0.194, 0.402, 0.584, 0.537, 0.286, 0.085, -0.300, -1.000,
+  -0.803, -0.209, 1.997, 0.909, 0.275, -0.130, -0.421, -0.561, -0.629,
+  -0.378, 0.001, 0.276, 0.635, 0.459, 0.330, 0.421, 0.457, 0.500,
 ];
 
 // Depth per checkpoint (world z; 0 = the ribbon's original plane, negative =
@@ -53,8 +53,8 @@ const PATH_Y = [
 const PATH_Z = [
   -5.000, -4.930, -4.720, -4.390, -3.960, -3.440, -2.840, -2.180, -1.480,
   -0.750, -0.048, 0.711, 1.353, 2.044, 2.744, 3.431, 3.914, 4.380,
-  4.724, 4.930, 5.000, 4.850, 4.450, 3.776, 3.031, 2.157, 1.060,
-  0.000, -1.121, -2.138, -3.101, -3.838, -4.508, -4.869, -5.000, -5.000,
+  4.724, 4.930, 5.027, 4.777, 4.419, 3.764, 3.031, 2.157, 1.060,
+  0.072, -1.136, -2.291, -3.103, -3.877, -4.536, -4.902, -5.031, -5.000,
 ];
 
 // Smooth curve through a checkpoint-sample array at position p (clamped outside 1..36).
@@ -119,14 +119,16 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// light blue ramp, near-white to soft cornflower (7 is coprime with the i*3
-// stride, so all stops get used and neighbors never repeat). For reference:
-// all white: ["#ffffff"]; pinks/violets: ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"]
-const COLORS = ["#f2f8ff", "#e0eefe", "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"];
+// graphite/slate ramp, a few steps lighter than the page bg — the ribbon
+// reads as carved from the background, highlights come from the light rig
+// (7 is coprime with the i*3 stride, so all stops get used and neighbors
+// never repeat). For reference — previous blue ramp: ["#f2f8ff", "#e0eefe",
+// "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"]; all white: ["#ffffff"]
+const COLORS = ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
 // only the 4 footprint corners rounded.
-function makeTileGeometry({ width = 3.0, depth = 1.9, height = 0.06, radius = 0.22 } = {}) {
+function makeTileGeometry({ width = 3.6, depth = 2.3, height = 0.06, radius = 0.26 } = {}) {
   const w = width / 2;
   const d = depth / 2;
   const r = radius;
@@ -742,9 +744,9 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
 // looks from -z).
 // Ordered screen-left to screen-right (world +x = screen-left).
 const LIGHT_DEFAULTS = [
-  { x: 8.5, y: 5.0, z: -6.0, intensity: 90, on: true },   // light 1 — left (key)
-  { x: -0.3, y: 3.8, z: 4.5, intensity: 20, on: true },   // light 2 — center (deep fill)
-  { x: -10.0, y: 3.5, z: -2.5, intensity: 60, on: true }, // light 3 — right (accent)
+  { x: 8.5, y: 5.0, z: -6.0, intensity: 130, on: true },  // light 1 — left (key)
+  { x: -0.3, y: 3.8, z: 4.5, intensity: 50, on: true },   // light 2 — center (deep fill)
+  { x: -10.0, y: 3.5, z: -3.5, intensity: 130, on: true },// light 3 — right (accent)
 ];
 const LIGHT_ROWS = [
   { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
