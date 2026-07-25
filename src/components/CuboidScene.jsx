@@ -3,7 +3,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { Shape, ExtrudeGeometry, AxesHelper, BufferAttribute, Color } from "three";
+import {
+  Shape,
+  ExtrudeGeometry,
+  AxesHelper,
+  BufferAttribute,
+  Color,
+  CanvasTexture,
+  RepeatWrapping,
+} from "three";
 
 const SPACING = 0.55;      // distance between tile centers along the chain
 const SCROLL_SPEED = 1.1;  // marquee drift, world units per second
@@ -30,10 +38,10 @@ const KEY_FADE = 3;
 // Hand-tuned path baked from the drag editor: y at checkpoints 1..36
 // (1 = visible screen-left edge). Interpolated with a Catmull-Rom spline.
 const PATH_Y = [
-  0.002, -0.692, -0.961, -0.891, -0.853, -0.768, -0.611, -0.517, -0.349,
-  -0.265, -0.369, -0.495, -1.075, -1.275, -1.128, -1.16, -1.232, -1.398,
-  -1.391, -0.709, 2.403, 1.417, 0.497, -0.009, -0.381, -0.19, -0.581,
-  -1.01, -1.647, -2.677, -2.054, -2.194, -1.866, -2.04, -2.218, -3.589,
+  0.502, -0.192, -0.461, -0.391, -0.353, -0.268, -0.111, -0.017, 0.151,
+  0.235, 0.131, 0.005, -0.575, -0.775, -0.628, -0.660, -0.732, -0.898,
+  -0.891, -0.209, 2.403, 1.417, 0.497, 0.036, -0.236, -0.375, -0.500,
+  0.000, 0.194, 0.402, 0.584, 0.537, 0.286, 0.085, 0.162, 0.000,
 ];
 
 // Depth per checkpoint (world z; 0 = the ribbon's original plane, negative =
@@ -41,10 +49,10 @@ const PATH_Y = [
 // back here like PATH_Y. Current shape: a full-width arc — both screen edges
 // closest to the viewer (-5), checkpoint 21 pushed away to +5.
 const PATH_Z = [
-  -5.0, -4.93, -4.72, -4.39, -3.96, -3.44, -2.84, -2.18, -1.48,
-  -0.75, 0.0, 0.75, 1.48, 2.18, 2.84, 3.44, 3.96, 4.39,
-  4.72, 4.93, 5.0, 4.85, 4.45, 3.82, 3.02, 2.09, 1.06,
-  0.0, -1.06, -2.09, -3.02, -3.82, -4.45, -4.85, -5.0, -5.0,
+  -5.000, -4.930, -4.720, -4.390, -3.960, -3.440, -2.840, -2.180, -1.480,
+  -0.750, 0.000, 0.750, 1.480, 2.180, 2.840, 3.440, 3.960, 4.390,
+  4.720, 4.930, 5.000, 4.850, 4.450, 3.776, 3.031, 2.157, 1.060,
+  0.000, -1.121, -2.138, -3.101, -3.838, -4.508, -4.869, -5.000, -5.000,
 ];
 
 // Smooth curve through a checkpoint-sample array at position p (clamped outside 1..36).
@@ -73,7 +81,8 @@ const smooth = (t) => t * t * (3 - 2 * t); // smoothstep
 
 // Fast zone: tiles accelerate between these checkpoints (they travel from
 // higher positions to lower ones), which also stretches the gaps there.
-const FAST_ZONE = { from: 23, to: 27, ramp: 2, speed: 1.5 };
+// speed: 1 = disabled (uniform flow); raise to re-enable the warp.
+const FAST_ZONE = { from: 23, to: 27, ramp: 2, speed: 1 };
 
 function speedAt(p) {
   const { from, to, ramp, speed } = FAST_ZONE;
@@ -108,13 +117,15 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// all white for now; previous palette (pinks / violets / blues) kept for reference:
-// ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"]
-const COLORS = ["#ffffff"];
+// blue ramp — seven stops from ice white down to true azure, straight through
+// the site accent (#6ea8fe), no violet drift. 7 is coprime with the (i*3)
+// stride, so every stop gets used and neighbors never repeat. Older palettes:
+// all white: ["#ffffff"]; pinks/violets: ["#f9a8d4", "#ec4899", "#be185d", "#a78bfa", "#60a5fa"]
+const COLORS = ["#f2f8ff", "#e0eefe", "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
 // only the 4 footprint corners rounded.
-function makeTileGeometry({ width = 3.0, depth = 1.9, height = 0.1, radius = 0.22 } = {}) {
+function makeTileGeometry({ width = 3.0, depth = 1.9, height = 0.06, radius = 0.22 } = {}) {
   const w = width / 2;
   const d = depth / 2;
   const r = radius;
@@ -133,6 +144,32 @@ function makeTileGeometry({ width = 3.0, depth = 1.9, height = 0.1, radius = 0.2
   geo.rotateX(-Math.PI / 2); // extrude runs along +z; make it the slab's thickness (y)
   geo.translate(0, -height / 2, 0);
   return geo;
+}
+
+// Fine monochrome noise, generated once on a canvas. Used two ways:
+// - relief variant (mid-grey, high contrast) as bump + roughness map — shows
+//   where light rakes the surface at an angle (edges, tilted tiles);
+// - color variant (near-white, low contrast) as albedo map — a subtle speckle
+//   that stays visible even under head-on light, where bump shading vanishes.
+function makeGrainTexture({ size = 256, base = 108, amp = 48 } = {}) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const img = ctx.createImageData(size, size);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = base + Math.random() * amp;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const tex = new CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = RepeatWrapping;
+  // UVs of the extruded shape are in world units (~3 across a face), so keep
+  // the repeat low: one grain texel should span a couple of SCREEN pixels —
+  // higher repeats minify the noise into flat grey via mipmapping.
+  tex.repeat.set(0.12, 0.12);
+  tex.anisotropy = 8; // keep the grain crisp at glancing angles
+  return tex;
 }
 
 // Debug: every side of the slab gets its own vertex color so orientation is
@@ -172,7 +209,7 @@ function makeDebugTileGeometry() {
   return geo;
 }
 
-function TileRibbon({ geometry, debug }) {
+function TileRibbon({ geometry, debug, grain }) {
   const ribbonRef = useRef();
   // Fill the visible width (plus margin) with tiles; they wrap around the
   // span like a conveyor belt, so the ribbon scrolls forever.
@@ -334,7 +371,13 @@ function TileRibbon({ geometry, debug }) {
           >
             {/* stand the slab on edge so its thin side runs along the chain */}
             <mesh geometry={geometry} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
-              <meshLambertMaterial color={COLORS[(i * 3) % COLORS.length]} />
+              <meshStandardMaterial
+                color={COLORS[(i * 3) % COLORS.length]}
+                map={grain.color}
+                roughness={0.85}
+                metalness={0}
+                roughnessMap={grain.relief}
+              />
             </mesh>
           </group>
         ))}
@@ -699,8 +742,8 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
 // Ordered screen-left to screen-right (world +x = screen-left).
 const LIGHT_DEFAULTS = [
   { x: 8.5, y: 5.0, z: -6.0, intensity: 90, on: true },   // light 1 — left (key)
-  { x: -1.8, y: 3.3, z: 4.5, intensity: 10, on: true },   // light 2 — center (deep fill)
-  { x: -10.0, y: 2.5, z: -2.5, intensity: 60, on: true }, // light 3 — right (accent)
+  { x: -0.3, y: 3.8, z: 4.5, intensity: 20, on: true },   // light 2 — center (deep fill)
+  { x: -10.0, y: 3.5, z: -2.5, intensity: 60, on: true }, // light 3 — right (accent)
 ];
 const LIGHT_ROWS = [
   { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
@@ -885,6 +928,13 @@ function DebugLight({ debug }) {
 export default function CuboidScene({ debug = false }) {
   const geometry = useMemo(() => makeTileGeometry(), []);
   const debugGeometry = useMemo(() => makeDebugTileGeometry(), []);
+  const grain = useMemo(
+    () => ({
+      relief: makeGrainTexture(), // mid-grey, strong — bump + roughness
+      color: makeGrainTexture({ base: 246, amp: 9 }), // near-white, subtle — albedo
+    }),
+    []
+  );
   return (
     <div className="h-full w-full">
       <Canvas
@@ -900,7 +950,7 @@ export default function CuboidScene({ debug = false }) {
             With decay 2, intensity is in candela-like units, hence the big number.
             DebugLight wraps the point light with a live position/intensity panel. */}
         <DebugLight debug={debug} />
-        <TileRibbon geometry={geometry} debug={debug} />
+        <TileRibbon geometry={geometry} debug={debug} grain={grain} />
         {debug && <DebugTile geometry={debugGeometry} />}
       </Canvas>
     </div>
