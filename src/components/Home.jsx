@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 // import ThreeDModelViewer from "./ThreeDModelViewer"; // cat model, parked for now
-import HoloModelViewer from "./HoloModelViewer";
+// import HoloModelViewer from "./HoloModelViewer"; // shapeshifter model, parked for now
+import CuboidScene from "./CuboidScene";
 import ContributionGraph from "./ContributionGraph";
 
 // Inclusive month count from Aug 2022, matching the Resume page (LinkedIn-style).
@@ -19,14 +20,15 @@ const STATS = [
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
   return (
-    <div className="relative h-[calc(100vh-3.5rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
+    <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
       <div className="absolute inset-0">
-        <HoloModelViewer />
+        <CuboidScene />
       </div>
 
-      <div className="absolute inset-0 z-10 flex flex-col justify-between p-10 max-nav:p-6 text-ink">
+      {/* pointer-events-none so the canvas stays interactive; re-enabled on content */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-10 max-nav:p-6 text-ink">
         {/* top-left: headline + CTAs */}
-        <div>
+        <div className="pointer-events-auto w-fit">
           <p className="mb-4 font-plex text-[0.7rem] tracking-[0.32em] uppercase text-accent">
             Volodymyr Korol · Frontend Team Lead
           </p>
@@ -54,7 +56,7 @@ export default function Home() {
         </div>
 
         {/* bottom: stats (left) + GitHub activity (right) */}
-        <div className="flex items-end justify-between gap-6 flex-wrap -mb-14 max-nav:-mb-8">
+        <div className="pointer-events-auto flex items-end justify-between gap-6 flex-wrap -mb-14 max-nav:-mb-8">
           <div className="flex gap-10 max-nav:gap-6 mb-1">
             {STATS.map((s) => (
               <div key={s.label}>
