@@ -65,7 +65,7 @@ const CONVEYORS = [
   // well inside the machine at either end before it swaps
   // cover: enclosed duct over the belt stretch inside the backend, running
   // from the belt's inner end up to the gate — boxes are truly hidden there
-  { key: "belt3", x0: -1.3, x1: 5.9, z: 0, mode: "shuttle", item: "#d0322c", item2: "#ef6a63", doors: [1.15], cover: { from: -1.25, to: 1.12 } }, // belt 3: BE ↔ DB
+  { key: "belt3", x0: -1.3, x1: 5.5, z: 0, mode: "shuttle", item: "#d0322c", item2: "#ef6a63", doors: [1.15], cover: { from: -1.25, to: 1.12 } }, // belt 3: BE ↔ DB
 ];
 const LINK_LABELS = [
   { x: -2.8, label: "HTTPS · REST · JSON" },
@@ -420,34 +420,80 @@ function BackendStation({ skin }) {
   );
 }
 
-/* Database machine: two storage platters stand on the head's roof like
-   factory tanks, with lighter top caps and seam grooves. */
+/* Database machine: same portal language as the backend, dressed as a
+   storage array — a grid of drive sleds with status LEDs on the left of the
+   head's face, and a porthole showing a spinning platter on the right. */
 function DatabaseStation({ skin }) {
-  const roofY = HEAD_H / 2;
+  const faceZ = TUNNEL_Z + 0.225 + 0.012;
+  const spinRef = useRef();
+  useFrame(({ clock }) => {
+    if (spinRef.current) spinRef.current.rotation.z = clock.elapsedTime * 2.4;
+  });
   return (
     <Housing skin={skin}>
-      {[0, 1].map((i) => (
-        <group key={i} position={[0, roofY + 0.29 + i * 0.6, 0]}>
-          <mesh castShadow receiveShadow>
-            <cylinderGeometry args={[0.78, 0.78, 0.56, 48]} />
-            <meshStandardMaterial
-              color={skin.dbBody}
-              roughness={0.32}
-              metalness={0.55}
-              roughnessMap={getGrain()}
-              envMapIntensity={0.9}
-            />
+      {/* drive sleds, 2×2 with alternating status LEDs */}
+      {[0, 1].map((row) =>
+        [0, 1].map((col) => (
+          <group key={`${row}${col}`} position={[-0.62 + col * 0.56, 0.29 - row * 0.36, faceZ]}>
+            <RoundedBox args={[0.5, 0.3, 0.05]} radius={0.02} smoothness={2}>
+              <meshStandardMaterial
+                color={skin.panel}
+                roughness={0.45}
+                metalness={0.45}
+                roughnessMap={getGrain()}
+                envMapIntensity={0.8}
+              />
+            </RoundedBox>
+            {/* handle slot */}
+            <mesh position={[-0.08, 0, 0.032]}>
+              <boxGeometry args={[0.22, 0.05, 0.015]} />
+              <meshStandardMaterial color={skin.slat} roughness={0.7} />
+            </mesh>
+            <mesh position={[0.17, 0, 0.035]}>
+              <sphereGeometry args={[0.026, 12, 12]} />
+              <meshStandardMaterial
+                color={(row + col) % 2 === 0 ? "#28c840" : "#febc2e"}
+                emissive={(row + col) % 2 === 0 ? "#28c840" : "#febc2e"}
+                emissiveIntensity={(row + col) % 2 === 0 ? 0.55 : 0.35}
+                roughness={0.3}
+              />
+            </mesh>
+          </group>
+        ))
+      )}
+      {/* status strip under the sleds */}
+      <mesh position={[-0.34, -0.42, faceZ]}>
+        <boxGeometry args={[1.06, 0.09, 0.03]} />
+        <meshStandardMaterial color={skin.slat} roughness={0.6} metalness={0.3} />
+      </mesh>
+      {/* porthole: rim, dark glass, and a platter that actually spins */}
+      <group position={[0.62, 0.05, faceZ]}>
+        <mesh position={[0, 0, 0.02]}>
+          <torusGeometry args={[0.34, 0.035, 14, 48]} />
+          <meshStandardMaterial color={skin.frame} roughness={0.3} metalness={0.65} envMapIntensity={0.9} />
+        </mesh>
+        <mesh position={[0, 0, 0.01]}>
+          <circleGeometry args={[0.33, 48]} />
+          <meshStandardMaterial color={skin.screen} roughness={0.15} metalness={0.1} envMapIntensity={1} />
+        </mesh>
+        <group ref={spinRef} position={[0, 0, 0.018]}>
+          {[0.24, 0.15].map((r) => (
+            <mesh key={r}>
+              <torusGeometry args={[r, 0.008, 8, 40]} />
+              <meshStandardMaterial color={skin.slat} roughness={0.5} metalness={0.4} />
+            </mesh>
+          ))}
+          {/* head arm — the spinning tell */}
+          <mesh position={[0.12, 0, 0.006]}>
+            <boxGeometry args={[0.22, 0.02, 0.01]} />
+            <meshStandardMaterial color={skin.frame} roughness={0.4} metalness={0.5} />
           </mesh>
-          <mesh position={[0, 0.281, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[0.78, 48]} />
-            <meshStandardMaterial color={skin.dbTop} roughness={0.26} metalness={0.5} envMapIntensity={0.9} />
-          </mesh>
-          <mesh position={[0, 0.28, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[0.77, 0.012, 10, 48]} />
-            <meshStandardMaterial color={skin.slat} roughness={0.6} metalness={0.2} />
+          <mesh>
+            <circleGeometry args={[0.05, 24]} />
+            <meshStandardMaterial color={skin.dbTop} roughness={0.3} metalness={0.5} />
           </mesh>
         </group>
-      ))}
+      </group>
     </Housing>
   );
 }
