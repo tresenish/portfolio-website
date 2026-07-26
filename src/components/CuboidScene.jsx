@@ -20,7 +20,7 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 RectAreaLightUniformsLib.init();
 
 const SPACING = 0.7;       // distance between tile centers along the chain
-const HOVER_LIFT = 0.4;    // how far a hovered tile rises (world units)
+const HOVER_LIFT = 0.9;    // how far a hovered tile rises (world units)
 const HOVER_EASE = 10;     // lift ease-in/out speed (higher = snappier)
 const SCROLL_SPEED = 1.0;  // marquee drift, world units per second
 const TILT = 0.45;         // turn each tile's face toward the camera (radians)
@@ -1244,6 +1244,24 @@ function DebugLight({ debug, theme = "dark" }) {
   );
 }
 
+// MacBook-class widths (~1512-1728 css px) keep the baseline zoom; wider
+// desktop screens (full HD and up) scale the scene up a touch so the ribbon
+// doesn't read smaller in the bigger canvas. Capped so 4K doesn't balloon.
+const BASE_ZOOM = 55;
+const ZOOM_REF_WIDTH = 1728;
+const ZOOM_MAX_SCALE = 1.15;
+
+function ResponsiveZoom() {
+  const camera = useThree((s) => s.camera);
+  const width = useThree((s) => s.size.width);
+  useEffect(() => {
+    const scale = Math.min(ZOOM_MAX_SCALE, Math.max(1, width / ZOOM_REF_WIDTH));
+    camera.zoom = BASE_ZOOM * scale;
+    camera.updateProjectionMatrix();
+  }, [camera, width]);
+  return null;
+}
+
 // debug: { checkpoints, tile, lights } — per-box switches from the topbar
 // dropdown (path markers + copy button, rotation tile, light panel).
 // theme: "dark" | "light" — picks the matching default light rig.
@@ -1262,9 +1280,10 @@ export default function CuboidScene({ debug = {}, theme = "dark" }) {
       <Canvas
         shadows="variance"
         orthographic
-        camera={{ zoom: 55, position: [0, 1.2, -14] }}
+        camera={{ zoom: BASE_ZOOM, position: [0, 1.2, -14] }}
         onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
       >
+        <ResponsiveZoom />
         {/* ambient fill + shadow-rig directional live in DebugLight now
             (each has a panel switch) */}
         {/* lamp hung high above the ribbon, pulled slightly toward the camera.
