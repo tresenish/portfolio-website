@@ -20,6 +20,8 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 RectAreaLightUniformsLib.init();
 
 const SPACING = 0.7;       // distance between tile centers along the chain
+const HOVER_LIFT = 0.4;    // how far a hovered tile rises (world units)
+const HOVER_EASE = 10;     // lift ease-in/out speed (higher = snappier)
 const SCROLL_SPEED = 1.0;  // marquee drift, world units per second
 const TILT = 0.45;         // turn each tile's face toward the camera (radians)
 // Checkpoints 1..35 are stretched across the full visible width:
@@ -324,13 +326,24 @@ function TileRibbon({ geometry, debug, grain }) {
     };
   }, [span, originX, step]);
 
-  useFrame(({ clock }) => {
+  // Hover lift: the tile under the pointer eases up a little and settles
+  // back down when the pointer leaves. Lift amounts live in a ref (no
+  // re-renders) and blend into the frame loop's path position.
+  const hoveredRef = useRef(null);
+  const liftsRef = useRef(new Float32Array(0));
+  if (liftsRef.current.length !== count) liftsRef.current = new Float32Array(count);
+
+  useFrame(({ clock }, delta) => {
     const scroll = clock.elapsedTime * SCROLL_SPEED;
+    const lifts = liftsRef.current;
+    const ease = Math.min(1, delta * HOVER_EASE);
     ribbonRef.current.children.forEach((tile, i) => {
       const u = (i * SPACING + scroll) % span; // uniform conveyor coordinate
       const x = warpX(u);
+      const target = hoveredRef.current === i ? HOVER_LIFT : 0;
+      lifts[i] += (target - lifts[i]) * ease;
       tile.position.x = x;
-      tile.position.y = pathY(x); // fixed curvy path in space
+      tile.position.y = pathY(x) + lifts[i]; // fixed curvy path + hover lift
       tile.position.z = pathZ(x); // sculpted depth along the same path
       // rotation choreography, keyed by checkpoint position (1 = screen-left edge)
       const p = pOf(x);
@@ -387,7 +400,19 @@ function TileRibbon({ geometry, debug, grain }) {
             rotation={BASE_ROT}
           >
             {/* stand the slab on edge so its thin side runs along the chain */}
-            <mesh geometry={geometry} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+            <mesh
+              geometry={geometry}
+              rotation={[0, 0, Math.PI / 2]}
+              castShadow
+              receiveShadow
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                hoveredRef.current = i;
+              }}
+              onPointerOut={() => {
+                if (hoveredRef.current === i) hoveredRef.current = null;
+              }}
+            >
               <meshStandardMaterial
                 color={COLORS[(i * 3) % COLORS.length]}
                 map={grain.color}
@@ -814,16 +839,26 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
 // faces straight down, and exposes width (length) + height (strip thickness)
 // on top of the usual coords. Area lights don't cast shadows.
 const degToRad = (d) => (d * Math.PI) / 180;
-const LIGHT_DEFAULTS = [
-  { x: 12.5, y: -3.5, z: -6.0, intensity: 40, on: false }, // light 1 — left (key, low)
-  { x: 0.7, y: 3.3, z: 4.5, intensity: 30, on: true },     // light 2 — center (deep fill)
-  { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: false }, // light 3 — right (accent)
-  // light 4 — line strip above the ribbon; rx/ry/rz aim it (degrees,
-  // rx -90 = straight down, rx 0 = at the camera side). ry slants the strip
-  // along the ribbon's depth ramp (PATH_Z runs -5 near / left edge to +5
-  // far / right edge); 160 ≈ the 20° slant with the strip flipped, hand-tuned.
-  { x: 0.0, y: 8.5, z: 0.0, intensity: 10, width: 30, height: 1.4, rx: -230, ry: 160, rz: 0, on: true, line: true },
-];
+// Per-theme default rigs (same lamps, different on/off): dark runs just the
+// center fill + line strip; light turns all three point lights on. Light 4
+// is the line strip above the ribbon; rx/ry/rz aim it (degrees, rx -90 =
+// straight down, rx 0 = at the camera side). ry slants the strip along the
+// ribbon's depth ramp (PATH_Z runs -5 near / left edge to +5 far / right
+// edge); 160 ≈ the 20° slant with the strip flipped, hand-tuned.
+const LIGHT_DEFAULTS = {
+  dark: [
+    { x: 12.5, y: -3.5, z: -6.0, intensity: 40, on: false }, // light 1 — left (key, low)
+    { x: 0.7, y: 3.3, z: 4.5, intensity: 30, on: true },     // light 2 — center (deep fill)
+    { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: false }, // light 3 — right (accent)
+    { x: 0.0, y: 8.5, z: 0.0, intensity: 10, width: 30, height: 1.4, rx: -230, ry: 160, rz: 0, on: true, line: true },
+  ],
+  light: [
+    { x: 12.5, y: -3.5, z: -6.0, intensity: 40, on: true },  // light 1 — left (key, low)
+    { x: 0.7, y: 3.3, z: 4.5, intensity: 30, on: true },     // light 2 — center (deep fill)
+    { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: true },  // light 3 — right (accent)
+    { x: 0.0, y: 8.5, z: 0.0, intensity: 10, width: 30, height: 1.4, rx: -230, ry: 160, rz: 0, on: true, line: true },
+  ],
+};
 const LIGHT_ROWS = [
   { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
   { key: "y", label: "Y (height)", color: AXIS_COLORS.y, scale: 0.03 },
@@ -840,8 +875,14 @@ const LINE_ROWS = [
   { key: "rz", label: "rot Z (roll)", color: AXIS_COLORS.z, scale: 2 },
 ];
 
-function DebugLight({ debug }) {
-  const [lights, setLights] = useState(LIGHT_DEFAULTS);
+function DebugLight({ debug, theme = "dark" }) {
+  const defaults = LIGHT_DEFAULTS[theme] ?? LIGHT_DEFAULTS.dark;
+  const [lights, setLights] = useState(defaults);
+  // Switching themes swaps in that theme's rig (drops unsaved panel edits).
+  useEffect(() => {
+    setLights(defaults);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
   // uniform base fill; off by default so the line light owns the scene
   const [ambient, setAmbient] = useState({ intensity: 0.28, on: false });
   // shadow rig: RectAreaLights can't cast shadows, so a dim directional
@@ -1188,7 +1229,7 @@ function DebugLight({ debug }) {
               {copied ? "copied!" : "copy"}
             </button>
             <button
-              onClick={() => patchActive(() => ({ ...LIGHT_DEFAULTS[active] }))}
+              onClick={() => patchActive(() => ({ ...defaults[active] }))}
               className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
             >
               reset
@@ -1205,7 +1246,8 @@ function DebugLight({ debug }) {
 
 // debug: { checkpoints, tile, lights } — per-box switches from the topbar
 // dropdown (path markers + copy button, rotation tile, light panel).
-export default function CuboidScene({ debug = {} }) {
+// theme: "dark" | "light" — picks the matching default light rig.
+export default function CuboidScene({ debug = {}, theme = "dark" }) {
   const geometry = useMemo(() => makeTileGeometry(), []);
   const debugGeometry = useMemo(() => makeDebugTileGeometry(), []);
   const grain = useMemo(
@@ -1230,7 +1272,7 @@ export default function CuboidScene({ debug = {} }) {
             the farther it is from the lamp, the darker it gets — for free.
             With decay 2, intensity is in candela-like units, hence the big number.
             DebugLight wraps the point light with a live position/intensity panel. */}
-        <DebugLight debug={debug.lights} />
+        <DebugLight debug={debug.lights} theme={theme} />
         <TileRibbon geometry={geometry} debug={debug.checkpoints} grain={grain} />
         {debug.tile && <DebugTile geometry={debugGeometry} />}
       </Canvas>

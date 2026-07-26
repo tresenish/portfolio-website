@@ -25,11 +25,11 @@ const GLASS =
 
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
-  const { debug } = useOutletContext() ?? {};
+  const { debug, theme } = useOutletContext() ?? {};
   return (
     <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
       <div className="absolute inset-0">
-        <CuboidScene debug={debug} />
+        <CuboidScene debug={debug} theme={theme} />
       </div>
 
       {/* bottom anchor: page fades toward pure black below the ribbon */}

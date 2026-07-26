@@ -185,7 +185,7 @@ export default function Root() {
                 )}
 
                 <main className="flex-1 min-w-0 bg-page">
-                    <Outlet context={{ debug: tools }} />
+                    <Outlet context={{ debug: tools, theme }} />
                 </main>
             </div>
             <Footer />
