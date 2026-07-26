@@ -55,9 +55,17 @@ const HEAD_H = 1.5;     // the machine head that spans the tunnel
 //   belt 3 — backend ↔ database (shuttle: run, pause, reverse; crimson)
 const FE_DOOR_X = -4.45;
 const CONVEYORS = [
-  { key: "belt1", x0: -6.3, x1: -0.8, z: 0.5, dir: 1, item: "#e14b44", doors: [FE_DOOR_X] },   // belt 1: FE → BE
-  { key: "belt2", x0: -6.3, x1: -0.8, z: -0.5, dir: -1, item: "#ffb4ad", doors: [FE_DOOR_X] }, // belt 2: BE → FE
-  { key: "belt3", x0: -0.7, x1: 4.8, z: 0, mode: "shuttle", item: "#d0322c" },                 // belt 3: BE ↔ DB
+  { key: "belt1", x0: -6.3, x1: -0.8, z: 0.5, dir: 1, item: "#e14b44", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } },   // belt 1: FE → BE
+  { key: "belt2", x0: -6.3, x1: -0.8, z: -0.5, dir: -1, item: "#ffb4ad", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } }, // belt 2: BE → FE
+  // belt 3: outbound query box (crimson) rides fully into the DB and is
+  // swallowed; after the pause a NEW result box (soft red) rides back and
+  // is swallowed by the backend. item2 = the return box's color.
+  // gate at the backend's right tunnel mouth (BE head edge ≈ x 1.125); the
+  // belt reaches deep into both tunnels so the whole 3-box train ends up
+  // well inside the machine at either end before it swaps
+  // cover: enclosed duct over the belt stretch inside the backend, running
+  // from the belt's inner end up to the gate — boxes are truly hidden there
+  { key: "belt3", x0: -1.3, x1: 5.9, z: 0, mode: "shuttle", item: "#d0322c", item2: "#ef6a63", doors: [1.15], cover: { from: -1.25, to: 1.12 } }, // belt 3: BE ↔ DB
 ];
 const LINK_LABELS = [
   { x: -2.8, label: "HTTPS · REST · JSON" },
@@ -96,13 +104,14 @@ function FitZoom() {
    with moving cleats, and parcels riding the surface. Constant belts wrap
    their parcels around; the shuttle belt carries the same parcels toward
    the database, pauses, and brings them back. */
-function Conveyor({ x0, x1, z, dir = 1, mode = "constant", item, skin, doors = [] }) {
+function Conveyor({ x0, x1, z, dir = 1, mode = "constant", item, item2, skin, doors = [], cover = null }) {
   const L = x1 - x0;
   const cx = (x0 + x1) / 2;
   const CLEAT_SPACING = 0.36;
   const ITEM_SPACING = 2.3; // sparse enough that doorways rest closed between parcels
   const cleatCount = Math.ceil(L / CLEAT_SPACING);
-  const itemCount = mode === "shuttle" ? 2 : Math.ceil(L / ITEM_SPACING);
+  const SHUTTLE_ROW = 3; // boxes per train on the shuttle
+  const itemCount = mode === "shuttle" ? SHUTTLE_ROW * 2 : Math.ceil(L / ITEM_SPACING);
   const off = useRef(0);
   const phase = useRef(0);
   const cleatRefs = useRef([]);
@@ -114,33 +123,63 @@ function Conveyor({ x0, x1, z, dir = 1, mode = "constant", item, skin, doors = [
 
   useFrame((_, delta) => {
     const V = 0.85; // belt speed, world units/s
-    let v = dir * V;
+    const wrap = (p) => ((p % L) + L) % L;
+    const itemXs = [];
+    let beltOff;
+
     if (mode === "shuttle") {
-      // run toward the DB, pause, run back, pause — net zero per cycle.
-      // Faster belt, shorter run: same travel distance in half the time.
-      const V_SHUTTLE = 1.5;
-      const T_RUN = 1.7;
+      // Belt offset is computed analytically from the cycle phase (not
+      // integrated), so it can never drift across phase boundaries.
+      const V_SHUTTLE = 2.0;
+      const GAP = 0.45;           // spacing inside the 3-box train
+      // the train's lead box starts just inside the backend tunnel with the
+      // whole row behind it also hidden; travel ends with the whole row
+      // inside the database tunnel
+      const start = -L / 2 + 0.4 + GAP * (SHUTTLE_ROW - 1);
+      const travel = L - 0.55 - GAP * (SHUTTLE_ROW - 1);
+      const T_RUN = travel / V_SHUTTLE;
       const T_PAUSE = 1.0;
       const cycle = 2 * (T_RUN + T_PAUSE);
       phase.current = (phase.current + delta) % cycle;
       const p = phase.current;
-      v = p < T_RUN ? V_SHUTTLE : p < T_RUN + T_PAUSE ? 0 : p < 2 * T_RUN + T_PAUSE ? -V_SHUTTLE : 0;
+      beltOff =
+        p < T_RUN ? V_SHUTTLE * p
+        : p < T_RUN + T_PAUSE ? travel
+        : p < 2 * T_RUN + T_PAUSE ? travel - V_SHUTTLE * (p - T_RUN - T_PAUSE)
+        : 0;
+      // train A (query, crimson): visible only on the outbound run — it
+      // rides fully into the DB and vanishes there
+      const aVisible = p < T_RUN;
+      // train B (result, soft red): NEW boxes that appear inside the DB for
+      // the return run and are swallowed by the backend
+      const bVisible = p >= T_RUN + T_PAUSE && p < 2 * T_RUN + T_PAUSE;
+      for (let i = 0; i < SHUTTLE_ROW; i++) {
+        const x = start + beltOff - i * GAP;
+        const a = itemRefs.current[i];
+        if (a) {
+          a.visible = aVisible;
+          a.position.x = x;
+          if (aVisible) itemXs.push(x);
+        }
+        const b = itemRefs.current[SHUTTLE_ROW + i];
+        if (b) {
+          b.visible = bVisible;
+          b.position.x = x;
+          if (bVisible) itemXs.push(x);
+        }
+      }
+    } else {
+      off.current += dir * V * delta;
+      beltOff = off.current;
+      itemRefs.current.forEach((m, i) => {
+        if (!m) return;
+        m.position.x = -L / 2 + wrap(i * ITEM_SPACING + beltOff + 0.4);
+        itemXs.push(m.position.x);
+      });
     }
-    off.current += v * delta;
-    const wrap = (p) => ((p % L) + L) % L;
+
     cleatRefs.current.forEach((m, i) => {
-      if (m) m.position.x = -L / 2 + wrap(i * CLEAT_SPACING + off.current);
-    });
-    const itemXs = [];
-    itemRefs.current.forEach((m, i) => {
-      if (!m) return;
-      m.position.x =
-        mode === "shuttle"
-          ? // start in the open span (clear of the station tunnel) and ride
-            // out toward the far end, then back — always visible
-            -L / 2 + L * 0.3 + i * 1.2 + off.current
-          : -L / 2 + wrap(i * ITEM_SPACING + off.current + 0.4);
-      itemXs.push(m.position.x);
+      if (m) m.position.x = -L / 2 + wrap(i * CLEAT_SPACING + beltOff);
     });
 
     // factory shutters: closed at rest — they snap open just as a parcel
@@ -206,9 +245,31 @@ function Conveyor({ x0, x1, z, dir = 1, mode = "constant", item, skin, doors = [
           position={[0, BELT_Y + 0.16, 0]}
           castShadow
         >
-          <meshStandardMaterial color={item} roughness={0.5} metalness={0.1} envMapIntensity={0.7} />
+          <meshStandardMaterial
+            color={mode === "shuttle" && i >= 3 ? item2 ?? item : item}
+            roughness={0.5}
+            metalness={0.1}
+            envMapIntensity={0.7}
+          />
         </RoundedBox>
       ))}
+      {/* enclosed duct over the in-machine belt stretch (up to the gate) */}
+      {cover && (
+        <mesh
+          position={[(cover.from + cover.to) / 2 - cx, -0.62, 0]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[cover.to - cover.from, 0.66, 0.86]} />
+          <meshStandardMaterial
+            color={skin.panel}
+            roughness={0.45}
+            metalness={0.5}
+            roughnessMap={getGrain()}
+            envMapIntensity={0.8}
+          />
+        </mesh>
+      )}
       {/* factory shutters at the station doorway: sliding panel + guides */}
       {doors.map((doorX, d) => (
         <group key={`d${d}`} position={[doorX - cx, 0, 0]}>
