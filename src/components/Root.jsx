@@ -106,7 +106,9 @@ export default function Root() {
                 </div>
             </header>
 
-            {/* debug tools dropdown, pinned just under the topbar */}
+            {/* debug tools dropdown, pinned just under the topbar —
+                parked for production; flip the false to bring it back */}
+            {false && (
             <div className="fixed right-6 top-16 z-30 font-plex text-[0.62rem] max-nav:hidden">
                 <button
                     onClick={() => setToolsOpen((o) => !o)}
@@ -137,6 +139,7 @@ export default function Root() {
                     </div>
                 )}
             </div>
+            )}
 
             <div className="flex flex-1 max-nav:flex-col">
                 {/* sidebar parked while the full-width animation is in play */}
