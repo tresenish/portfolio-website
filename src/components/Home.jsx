@@ -5,6 +5,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import CuboidScene from "./CuboidScene";
 import ContributionGraph from "./ContributionGraph";
 import SectionLabel from "./SectionLabel";
+import StackScene from "./StackScene";
 import { projects } from "./Projects";
 
 // Below-the-fold content: what I work on day to day, in stack order.
@@ -41,15 +42,20 @@ const STATS = [
   { value: "10+", label: "technologies" },
 ];
 
-/* Bottom cards: solid (bg-card token) so the bottom gradient can't shade
-   through, with a hairline edge, top highlight, and a soft lift shadow. */
-const GLASS =
-  "rounded-2xl border border-hairline bg-card " +
-  "shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)]";
+/* Liquid-glass card — the same recipe as the navbar island (page-tinted
+   translucency, heavy blur + saturation, hairline edge, top highlight,
+   soft lift shadow), shared by every card on the home page. The shadow and
+   highlight are theme-tuned: soft grey lift on light, deep lift on dark. */
+const glassFor = (theme) =>
+  "rounded-2xl border border-hairline bg-page/60 backdrop-blur-xl backdrop-saturate-150 " +
+  (theme === "light"
+    ? "shadow-[0_8px_32px_rgba(28,30,33,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]"
+    : "shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)]");
 
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
   const { debug, theme } = useOutletContext() ?? {};
+  const GLASS = glassFor(theme);
   return (
     <>
     <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
@@ -153,7 +159,7 @@ export default function Home() {
           {PILLARS.map((p) => (
             <div
               key={p.title}
-              className="flex flex-col gap-3 rounded-xl border border-hairline bg-card p-6 transition-colors hover:border-accent-dim"
+              className={`flex flex-col gap-3 ${GLASS} p-6 transition-colors hover:border-accent-dim`}
             >
               <h3 className="text-[1.02rem] font-medium">{p.title}</h3>
               <p className="text-[0.88rem] leading-relaxed text-muted">{p.text}</p>
@@ -164,6 +170,23 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* the full stack, animated: browser → server → database pipeline.
+          Full-bleed like the hero — the scene is the section's background,
+          with the label and caption overlaid. */}
+      <section className="relative left-1/2 -mx-[50vw] w-screen mb-20 max-nav:mb-14">
+        <div className="relative h-[36rem] max-nav:h-[24rem]">
+          <div className="absolute inset-0">
+            <StackScene theme={theme} />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 px-[8%] pt-2 max-nav:px-[6%]">
+            <SectionLabel title="How a request travels" />
+          </div>
+          <p className="pointer-events-none absolute bottom-4 left-[8%] font-plex text-[0.68rem] text-faint max-nav:left-[6%]">
+            Every feature I ship crosses all three — interface, API, and data.
+          </p>
         </div>
       </section>
 
@@ -185,7 +208,7 @@ export default function Home() {
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex flex-col rounded-xl border border-hairline overflow-hidden transition-colors hover:border-accent-dim"
+              className={`group flex flex-col overflow-hidden ${GLASS} transition-colors hover:border-accent-dim`}
             >
               <div className="overflow-hidden border-b border-hairline">
                 <img
@@ -204,7 +227,7 @@ export default function Home() {
       </section>
 
       {/* closing CTA */}
-      <section className="rounded-2xl border border-hairline bg-card px-10 py-12 max-nav:px-6 max-nav:py-8 flex items-center justify-between gap-8 flex-wrap">
+      <section className={`${GLASS} px-10 py-12 max-nav:px-6 max-nav:py-8 flex items-center justify-between gap-8 flex-wrap`}>
         <div>
           <h2 className="text-[1.35rem] font-semibold tracking-tight">Have something to build?</h2>
           <p className="mt-2 max-w-[34rem] text-[0.92rem] leading-relaxed text-muted">

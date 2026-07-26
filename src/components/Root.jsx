@@ -51,7 +51,11 @@ export default function Root() {
                 slot in the flow (page layout unchanged) while the island
                 inside floats detached with blur + translucency over content. */}
             <header className="sticky top-3 z-20 h-14 shrink-0 flex items-center justify-center px-4">
-                <div className="flex items-center gap-6 max-nav:gap-3 rounded-full border border-hairline bg-page/60 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] py-1.5 pl-2 pr-5 max-nav:px-3">
+                <div className={`flex items-center gap-6 max-nav:gap-3 rounded-full border border-hairline bg-page/60 backdrop-blur-xl backdrop-saturate-150 py-1.5 pl-2 pr-5 max-nav:px-3 ${
+                    theme === "light"
+                        ? "shadow-[0_8px_32px_rgba(28,30,33,0.10),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                        : "shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)]"
+                }`}>
                     <NavLink to="/" className="flex items-center gap-2.5 group min-w-0">
                         <img
                             className="w-8 h-8 rounded-full border border-hairline object-cover shrink-0"
