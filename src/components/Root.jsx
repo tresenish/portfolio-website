@@ -47,54 +47,62 @@ export default function Root() {
 
     return (
         <div className="min-h-screen bg-page flex flex-col">
-            {/* topbar */}
-            <header className="sticky top-0 z-20 h-14 shrink-0 flex items-center justify-between gap-6 px-6 max-nav:px-[6%] bg-page/85 backdrop-blur border-b border-hairline">
-                <NavLink to="/" className="flex items-center gap-3 group min-w-0">
-                    <img
-                        className="w-8 h-8 rounded-full border border-hairline object-cover shrink-0"
-                        alt="avatar"
-                        src={avatar}
-                    />
-                    <span className="min-w-0 max-nav:hidden">
-                        <span className="block text-[0.92rem] font-semibold tracking-tight text-ink transition-colors group-hover:text-accent leading-tight">Volodymyr Korol</span>
-                        <span className="block text-[0.68rem] text-muted leading-tight">Frontend Team Lead</span>
-                    </span>
-                </NavLink>
+            {/* topbar: floating liquid-glass island. The header keeps its h-14
+                slot in the flow (page layout unchanged) while the island
+                inside floats detached with blur + translucency over content. */}
+            <header className="sticky top-3 z-20 h-14 shrink-0 flex items-center justify-center px-4">
+                <div className="flex items-center gap-6 max-nav:gap-3 rounded-full border border-hairline bg-page/60 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.08)] py-1.5 pl-2 pr-5 max-nav:px-3">
+                    <NavLink to="/" className="flex items-center gap-2.5 group min-w-0">
+                        <img
+                            className="w-8 h-8 rounded-full border border-hairline object-cover shrink-0"
+                            alt="avatar"
+                            src={avatar}
+                        />
+                        <span className="min-w-0 max-nav:hidden">
+                            <span className="block text-[0.85rem] font-semibold tracking-tight text-ink transition-colors group-hover:text-accent leading-tight">Volodymyr Korol</span>
+                            <span className="block text-[0.64rem] text-muted leading-tight">Frontend Team Lead</span>
+                        </span>
+                    </NavLink>
 
-                <nav className="flex items-center gap-7 max-nav:gap-4">
-                    {NAV_ITEMS.map((item, i) => (
-                        <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
-                            {({ isActive }) => (
-                                <>
-                                    <span className={`font-plex text-[0.62rem] transition-colors max-nav:hidden ${isActive ? "text-accent" : "text-faint"}`}>
-                                        0{i + 1}
-                                    </span>
-                                    <span className="text-[0.9rem]">{item.label}</span>
-                                </>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
+                    <span className="h-5 w-px bg-hairline max-nav:hidden" aria-hidden="true"></span>
 
-                <div className="flex items-center gap-4 max-nav:hidden">
-                    {/* MagicUI toggler in controlled mode: it runs the circular
-                        view-transition reveal, we keep owning the data-theme attr */}
-                    <AnimatedThemeToggler
-                        theme={theme}
-                        onThemeChange={setTheme}
-                        duration={900}
-                        title={theme === "dark" ? "switch to light background" : "switch to dark background"}
-                        className="text-muted hover:text-accent transition-colors cursor-pointer [&_svg]:w-[18px] [&_svg]:h-[18px]"
-                    />
-                    {SOCIALS.map((s) => (
-                        <a
-                            key={s.label}
-                            className={`fa ${s.icon} text-[1.05rem] text-muted hover:text-accent transition-colors`}
-                            href={s.href}
-                            {...(s.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                            aria-label={s.label}
-                        ></a>
-                    ))}
+                    <nav className="flex items-center gap-6 max-nav:gap-4">
+                        {NAV_ITEMS.map((item, i) => (
+                            <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
+                                {({ isActive }) => (
+                                    <>
+                                        <span className={`font-plex text-[0.62rem] transition-colors max-nav:hidden ${isActive ? "text-accent" : "text-faint"}`}>
+                                            0{i + 1}
+                                        </span>
+                                        <span className="text-[0.88rem]">{item.label}</span>
+                                    </>
+                                )}
+                            </NavLink>
+                        ))}
+                    </nav>
+
+                    <span className="h-5 w-px bg-hairline max-nav:hidden" aria-hidden="true"></span>
+
+                    <div className="flex items-center gap-3.5 max-nav:hidden">
+                        {/* MagicUI toggler in controlled mode: it runs the circular
+                            view-transition reveal, we keep owning the data-theme attr */}
+                        <AnimatedThemeToggler
+                            theme={theme}
+                            onThemeChange={setTheme}
+                            duration={900}
+                            title={theme === "dark" ? "switch to light background" : "switch to dark background"}
+                            className="text-muted hover:text-accent transition-colors cursor-pointer [&_svg]:w-[17px] [&_svg]:h-[17px]"
+                        />
+                        {SOCIALS.map((s) => (
+                            <a
+                                key={s.label}
+                                className={`fa ${s.icon} text-[1rem] text-muted hover:text-accent transition-colors`}
+                                href={s.href}
+                                {...(s.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                                aria-label={s.label}
+                            ></a>
+                        ))}
+                    </div>
                 </div>
             </header>
 

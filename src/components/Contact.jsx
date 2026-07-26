@@ -1,17 +1,14 @@
 import React from "react";
 import SectionLabel from "./SectionLabel";
-import mailIcon from "../componentStyle/img/mail.png";
-import phoneIcon from "../componentStyle/img/phone.png";
-import linkedInIcon from "../componentStyle/img/LIn.png";
-import gitIcon from "../componentStyle/img/git.png";
-import instIcon from "../componentStyle/img/inst.png";
 
+// Font Awesome classes — same icon set as the navbar socials, so the whole
+// site speaks one icon language and the chips tint with the theme tokens.
 const CONTACTS = [
-  { key: "Email", icon: mailIcon, chip: "bg-white rounded-[0.3rem]", value: "korolvolodymyr0@gmail.com", href: "mailto:korolvolodymyr0@gmail.com" },
-  { key: "Phone", icon: phoneIcon, chip: "bg-white rounded-[0.3rem] p-px", value: "+1 431-588-3209", href: "tel:+14315883209" },
-  { key: "LinkedIn", icon: linkedInIcon, chip: "rounded-[0.3rem]", value: "volodymyr-korol", href: "https://www.linkedin.com/in/volodymyr-korol/", external: true },
-  { key: "GitHub", icon: gitIcon, chip: "bg-white rounded-full", value: "tresenish", href: "https://github.com/tresenish", external: true },
-  { key: "Instagram", icon: instIcon, chip: "rounded-[0.3rem]", value: "kusipka", href: "https://www.instagram.com/kusipka/", external: true },
+  { key: "Email", icon: "fa-envelope-o", value: "korolvolodymyr0@gmail.com", href: "mailto:korolvolodymyr0@gmail.com" },
+  { key: "Phone", icon: "fa-phone", value: "+1 431-588-3209", href: "tel:+14315883209" },
+  { key: "LinkedIn", icon: "fa-linkedin", value: "volodymyr-korol", href: "https://www.linkedin.com/in/volodymyr-korol/", external: true },
+  { key: "GitHub", icon: "fa-github", value: "tresenish", href: "https://github.com/tresenish", external: true },
+  { key: "Instagram", icon: "fa-instagram", value: "kusipka", href: "https://www.instagram.com/kusipka/", external: true },
 ];
 
 const sectionClass = "mb-16 animate-rise motion-reduce:animate-none";
@@ -34,7 +31,12 @@ export default function Contact() {
               href={c.href}
               {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
             >
-              <img className={`w-6 h-6 shrink-0 ${c.chip}`} alt="" aria-hidden="true" src={c.icon} />
+              <span
+                className="flex w-10 h-10 shrink-0 items-center justify-center rounded-lg border border-hairline bg-card transition-colors group-hover:border-accent-dim"
+                aria-hidden="true"
+              >
+                <span className={`fa ${c.icon} text-[1.1rem] text-ink-dim transition-colors group-hover:text-accent`}></span>
+              </span>
               <span className="min-w-0">
                 <span className="block font-plex text-[0.66rem] tracking-[0.18em] uppercase text-muted">{c.key}</span>
                 <span className="block mt-1 text-[0.92rem] text-ink-dim truncate transition-colors group-hover:text-accent">

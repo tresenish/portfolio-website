@@ -39,8 +39,9 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-10 max-nav:p-6 text-ink">
         {/* top-left: status + headline + CTAs — no panel, the text floats
             directly over the scene so the ribbon stays visible; only the
-            small pills are glass */}
-        <div className="pointer-events-auto w-fit">
+            small pills are glass. pointer-events stay off for the text so
+            tile hover works right through it — only the links re-enable. */}
+        <div className="pointer-events-none w-fit">
           <span className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-page/50 backdrop-blur-md px-3.5 py-1.5 font-plex text-[0.64rem] tracking-[0.16em] uppercase text-ink-dim">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-ink opacity-40 animate-ping motion-reduce:animate-none"></span>
@@ -57,20 +58,20 @@ export default function Home() {
           <div className="mt-9 flex items-center gap-4 flex-wrap">
             <Link
               to="/projects"
-              className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-2.5 text-[0.9rem] font-medium text-page transition-colors hover:bg-ink-dim"
+              className="pointer-events-auto group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-2.5 text-[0.9rem] font-medium text-page transition-colors hover:bg-ink-dim"
             >
               View projects
               <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
             <Link
               to="/resume"
-              className="rounded-full border border-hairline bg-page/50 backdrop-blur-md px-6 py-2.5 text-[0.9rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
+              className="pointer-events-auto rounded-full border border-hairline bg-page/50 backdrop-blur-md px-6 py-2.5 text-[0.9rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
             >
               Resume
             </Link>
             <Link
               to="/contact"
-              className="text-[0.9rem] font-medium text-muted underline decoration-hairline underline-offset-[6px] transition-colors hover:text-ink hover:decoration-ink"
+              className="pointer-events-auto text-[0.9rem] font-medium text-muted underline decoration-hairline underline-offset-[6px] transition-colors hover:text-ink hover:decoration-ink"
             >
               Get in touch
             </Link>
