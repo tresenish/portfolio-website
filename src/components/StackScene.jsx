@@ -513,9 +513,9 @@ function Pipeline({ skin }) {
             >
               <Model skin={skin} />
             </group>
-            <Html center position={[0, GROUND_Y - 0.55, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+            <Html center position={[-0.7, GROUND_Y - 0.95, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
               <div className="text-center whitespace-nowrap select-none">
-                <p className="font-plex text-[0.66rem] tracking-[0.2em] uppercase text-ink">{st.label}</p>
+                <p className="font-plex text-[0.9rem] tracking-[0.2em] uppercase text-ink">{st.label}</p>
                 <p className="mt-0.5 font-plex text-[0.6rem] text-muted">{st.stack}</p>
               </div>
             </Html>
