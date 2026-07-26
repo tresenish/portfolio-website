@@ -15,11 +15,24 @@ export default function ContributionGraph({ username }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((json) => { if (!cancelled) setData(json); })
-      .catch(() => { if (!cancelled) setFailed(true); });
-    return () => { cancelled = true; };
+    const load = () => {
+      fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then((json) => { if (!cancelled) { setData(json); setFailed(false); } })
+        .catch(() => { if (!cancelled && !data) setFailed(true); });
+    };
+    load();
+    // refetch when the tab comes back into focus and every 10 minutes,
+    // so the graph tracks today's pushes without a manual reload
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    const interval = setInterval(load, 10 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   if (failed) {
