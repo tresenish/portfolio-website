@@ -4,10 +4,12 @@
 // backend→frontend as a continuous pair, backend↔database as a shuttle that
 // runs, pauses, and reverses. Bodies wear the tile ramp's reds; a studio
 // environment map and floor shadows keep the hardware grounded.
-import React, { useEffect, useRef } from "react";
+import React, { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Html, Lightformer, RoundedBox } from "@react-three/drei";
-import { CanvasTexture, RepeatWrapping } from "three";
+import { Environment, Html, Lightformer, RoundedBox, useAnimations, useGLTF } from "@react-three/drei";
+import { Box3, CanvasTexture, DoubleSide, RepeatWrapping, Vector3 } from "three";
+
+const BRAIN_URL = "/models/brain/brain_hologram_opt.glb";
 
 // Fine noise texture used as a roughnessMap on the large bodies — breaks up
 // the perfectly-even shading that screams "CG primitive". Created once.
@@ -79,12 +81,12 @@ const SKINS = {
   dark: {
     body: "#e9ebee", panel: "#d2d5da", screen: "#1d2026", block: "#8b9096",
     slat: "#9aa0a6", dbBody: "#dfe2e6", dbTop: "#f2f4f6",
-    belt: "#26282d", frame: "#8a9096", shadow: 0.45,
+    belt: "#26282d", frame: "#8a9096", deck: "#17181c", shadow: 0.45,
   },
   light: {
     body: "#1c1e21", panel: "#2b2e33", screen: "#ffffff", block: "#c6cbd2",
     slat: "#4a4e54", dbBody: "#26292e", dbTop: "#33373d",
-    belt: "#2f3237", frame: "#6a6f76", shadow: 0.16,
+    belt: "#2f3237", frame: "#6a6f76", deck: "#232529", shadow: 0.16,
   },
 };
 
@@ -289,12 +291,15 @@ function Conveyor({ x0, x1, z, dir = 1, mode = "constant", item, item2, skin, do
   );
 }
 
-/* Shared factory portal: two columns beside the line and a machine head
-   spanning the tunnel — belts run through underneath. Built from the floor
-   up (y positions are absolute), toppers dress the head per station. */
+/* Shared factory portal: two columns beside the line and a glass display
+   case spanning the tunnel — transparent top and sides on a metal edge
+   frame over an opaque deck, so each station can exhibit its internals.
+   Built from the floor up (y positions are absolute); toppers dress the
+   case front per station. */
 function Housing({ skin, children }) {
   const headY = GROUND_Y + COL_H + HEAD_H / 2;
   const headD = TUNNEL_Z * 2 + 0.45;
+  const headW = 2.25;
   return (
     <group>
       {[-TUNNEL_Z, TUNNEL_Z].map((z) => (
@@ -316,25 +321,63 @@ function Housing({ skin, children }) {
           />
         </RoundedBox>
       ))}
-      <RoundedBox
-        args={[2.25, HEAD_H, headD]}
-        radius={0.07}
-        smoothness={4}
-        position={[0, headY, 0]}
-        castShadow
-        receiveShadow
-      >
+      {/* glass case: no shadow casting, no depth write, double-sided so the
+          interior stays visible through every pane */}
+      <RoundedBox args={[headW, HEAD_H, headD]} radius={0.07} smoothness={4} position={[0, headY, 0]}>
         <meshPhysicalMaterial
-          color={skin.body}
-          roughness={0.45}
-          metalness={0.35}
-          clearcoat={0.4}
-          clearcoatRoughness={0.35}
-          roughnessMap={getGrain()}
-          envMapIntensity={0.9}
+          color="#dfe7ee"
+          transparent
+          opacity={0.16}
+          roughness={0.06}
+          metalness={0}
+          envMapIntensity={1.2}
+          depthWrite={false}
+          side={DoubleSide}
         />
       </RoundedBox>
-      {/* per-station dressing, positioned relative to the head center */}
+      {/* deck: the case's dark opaque floor where the exhibits stand */}
+      <mesh position={[0, headY - HEAD_H / 2 + 0.05, 0]} castShadow receiveShadow>
+        <boxGeometry args={[headW - 0.1, 0.1, headD - 0.1]} />
+        <meshStandardMaterial
+          color={skin.deck}
+          roughness={0.55}
+          metalness={0.4}
+          roughnessMap={getGrain()}
+          envMapIntensity={0.6}
+        />
+      </mesh>
+      {/* metal edge frame: four corner posts + top rails */}
+      {[-1, 1].flatMap((sx) =>
+        [-1, 1].map((sz) => (
+          <mesh
+            key={`post${sx}${sz}`}
+            position={[sx * (headW / 2 - 0.05), headY, sz * (headD / 2 - 0.05)]}
+            castShadow
+          >
+            <boxGeometry args={[0.09, HEAD_H, 0.09]} />
+            <meshStandardMaterial color={skin.frame} roughness={0.35} metalness={0.6} envMapIntensity={0.8} />
+          </mesh>
+        ))
+      )}
+      {[-1, 1].map((sz) => (
+        <mesh
+          key={`railx${sz}`}
+          position={[0, headY + HEAD_H / 2 - 0.045, sz * (headD / 2 - 0.05)]}
+        >
+          <boxGeometry args={[headW, 0.09, 0.09]} />
+          <meshStandardMaterial color={skin.frame} roughness={0.35} metalness={0.6} envMapIntensity={0.8} />
+        </mesh>
+      ))}
+      {[-1, 1].map((sx) => (
+        <mesh
+          key={`railz${sx}`}
+          position={[sx * (headW / 2 - 0.05), headY + HEAD_H / 2 - 0.045, 0]}
+        >
+          <boxGeometry args={[0.09, 0.09, headD]} />
+          <meshStandardMaterial color={skin.frame} roughness={0.35} metalness={0.6} envMapIntensity={0.8} />
+        </mesh>
+      ))}
+      {/* per-station dressing, positioned relative to the case center */}
       <group position={[0, headY, 0]}>{children}</group>
     </group>
   );
@@ -374,13 +417,122 @@ function FrontendStation({ skin }) {
   );
 }
 
+/* The brain on exhibit inside the backend's glass case: two wrinkled
+   hemispheres, cerebellum, and stem in the tile ramp's reds — floating,
+   slowly turning, breathing. */
+function Brain() {
+  const ref = useRef();
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (!ref.current) return;
+    ref.current.rotation.y = t * 0.35;
+    ref.current.position.y = 0.0 + Math.sin(t * 0.9) * 0.045;
+    const s = 1 + Math.sin(t * 1.8) * 0.025; // gentle pulse
+    ref.current.scale.setScalar(s);
+  });
+  const matProps = {
+    color: "#ef6a63",
+    roughness: 0.55,
+    metalness: 0.05,
+    bumpMap: getGrain(),
+    bumpScale: 0.6,
+    emissive: "#d0322c",
+    emissiveIntensity: 0.12,
+    envMapIntensity: 0.6,
+  };
+  return (
+    <group ref={ref}>
+      {/* hemispheres */}
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[sx * 0.2, 0.05, 0]} scale={[0.75, 0.62, 1]} castShadow>
+          <sphereGeometry args={[0.42, 36, 28]} />
+          <meshStandardMaterial {...matProps} />
+        </mesh>
+      ))}
+      {/* central fissure */}
+      <mesh position={[0, 0.14, 0]}>
+        <boxGeometry args={[0.025, 0.4, 0.68]} />
+        <meshStandardMaterial color="#9c1712" roughness={0.8} />
+      </mesh>
+      {/* cerebellum */}
+      <mesh position={[0, -0.2, -0.33]} scale={[1, 0.7, 0.8]} castShadow>
+        <sphereGeometry args={[0.23, 24, 18]} />
+        <meshStandardMaterial {...matProps} color="#d0322c" />
+      </mesh>
+      {/* stem */}
+      <mesh position={[0, -0.33, -0.28]} rotation={[0.5, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.06, 0.08, 0.26, 12]} />
+        <meshStandardMaterial color="#b71c1c" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+/* The hologram brain GLB, normalized to fit the case and playing its baked
+   particle animation, with a gentle bob + pulse on top. */
+function BrainExhibit() {
+  const ref = useRef();
+  const { scene, animations } = useGLTF(BRAIN_URL);
+  const { actions } = useAnimations(animations, scene);
+  useEffect(() => {
+    const first = Object.values(actions)[0];
+    first?.reset().play();
+  }, [actions]);
+  // recolor the hologram's two particle systems: Particle_1 → red,
+  // Particle_2 → white. Emissive intensity is capped (the shipped strength
+  // overexposes under tone mapping and shifts hue) but kept high enough to
+  // glow brightly.
+  useEffect(() => {
+    scene.traverse((o) => {
+      if (o.isMesh && o.material) {
+        const isWhite = o.material.name === "Particle_2";
+        o.material.color?.set(isWhite ? "#e7e9ea" : "#b71c1c");
+        o.material.emissive?.set(isWhite ? "#ffffff" : "#e14b44");
+        if (o.material.emissiveIntensity !== undefined) {
+          o.material.emissiveIntensity = Math.min(o.material.emissiveIntensity, isWhite ? 1.6 : 2.2);
+        }
+      }
+    });
+  }, [scene]);
+  // normalize: fit the model's largest dimension to ~2.2 case units
+  const fit = useMemo(() => {
+    const box = new Box3().setFromObject(scene);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    const s = 2.2 / Math.max(size.x, size.y, size.z);
+    return { s, center };
+  }, [scene]);
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    if (!ref.current) return;
+    ref.current.position.y = Math.sin(t * 0.9) * 0.045;
+    ref.current.scale.setScalar(1 + Math.sin(t * 1.8) * 0.02);
+  });
+  return (
+    <group ref={ref}>
+      <group
+        scale={fit.s}
+        position={[-fit.center.x * fit.s, -fit.center.y * fit.s, -fit.center.z * fit.s]}
+      >
+        <primitive object={scene} />
+      </group>
+    </group>
+  );
+}
+useGLTF.preload(BRAIN_URL);
+
 /* Backend machine: the head carries two rack units — vents, handles, and
-   steady status LEDs. */
+   steady status LEDs — and exhibits the hologram brain in its glass case
+   (the primitive Brain fills in while the GLB streams). */
 function BackendStation({ skin }) {
   const faceZ = TUNNEL_Z + 0.225 + 0.012;
   return (
     <Housing skin={skin}>
-      {[0, 1].map((u) => (
+      <Suspense fallback={<Brain />}>
+        <BrainExhibit />
+      </Suspense>
+      {/* single low rack unit so the glass above stays clear for the brain */}
+      {[1].map((u) => (
         <group key={u} position={[0, 0.3 - u * 0.62, faceZ]}>
           <RoundedBox args={[1.95, 0.5, 0.05] } radius={0.02} smoothness={2}>
             <meshStandardMaterial
