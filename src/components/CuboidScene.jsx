@@ -133,10 +133,11 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// single-hue red ramp, blush to crimson — bright, saturated, one family.
-// 7 stops, coprime with the i*3 stride: the visit order (0,3,6,2,5,1,4)
-// interleaves light and deep stops, so neighbors always contrast in depth
-// even though every tile is red.
+// polarized red ramp — near-whites and true reds, no coral/orange middle:
+// the hue stays pinned on pure red, the ramp just walks lightness from
+// almost-white down to deep red. 7 stops, coprime with the i*3 stride: the
+// visit order (0,3,6,2,5,1,4) interleaves pale and deep stops, so the
+// ribbon alternates white-ish and red tiles.
 // Previous palettes for reference —
 // blue ramp: ["#b5dcff", "#8ec8fd", "#67b1fa", "#4497f4", "#277ee9", "#1663d3", "#0d4bb5"]
 // mineral (light): ["#d29285", "#d4ab88", "#e0ceaa", "#b3c19f", "#96b3a7", "#94b6c2", "#92a9c9", "#9ca2c4", "#ae9cbb", "#c495a2", "#aeb0b5"]
@@ -145,13 +146,13 @@ function rotAtPos(p) {
 // faded red/orange/blue/purple (stride-ordered): ["#d05f50", "#bf5546", "#9678c2", "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]
 // graphite: ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
 const COLORS = [
-  "#ffb3a7", // blush
-  "#ff9a8a", // salmon
-  "#ff7f6e", // coral
-  "#f96352", // vermilion
-  "#ee4638", // red
-  "#d92e23", // crimson
-  "#c01d17", // deep red
+  "#fff1ef", // almost white
+  "#ffd6d1", // pale blush
+  "#ffb4ad", // rose
+  "#ef6a63", // soft red
+  "#e14b44", // red
+  "#d0322c", // crimson
+  "#b71c1c", // deep red
 ];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,

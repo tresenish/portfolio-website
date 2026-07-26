@@ -15,7 +15,7 @@ const linkIconClass = "material-symbols-outlined text-[1.2rem] ml-1.5 text-faint
 const techPillClass =
   "font-plex text-[0.7rem] text-ink-dim border border-hairline rounded-full px-2.5 py-0.5 whitespace-nowrap";
 
-const projects = [
+export const projects = [
   {
     title: "Boardroom",
     link: "https://board-room-app.vercel.app/",
@@ -117,7 +117,7 @@ export default function Projects() {
               role="button"
               tabIndex={0}
               aria-label={`Open details for ${project.title}`}
-              className="group grid nav:grid-cols-[15rem_1fr] gap-8 max-nav:gap-4 items-start py-9 border-t border-hairline first:border-t-0 first:pt-0 cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent animate-rise motion-reduce:animate-none"
+              className="group grid nav:grid-cols-[22rem_1fr] gap-8 max-nav:gap-4 items-start py-9 border-t border-hairline first:border-t-0 first:pt-0 cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent animate-rise motion-reduce:animate-none"
               style={{ animationDelay: `${0.1 + index * 0.08}s` }}
               onClick={() => setOpenIndex(index)}
               onKeyDown={(e) => handleCardKeyDown(e, index)}
