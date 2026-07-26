@@ -1,7 +1,8 @@
 // Root.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import Footer from "./Footer";
+import { AnimatedThemeToggler } from "./ui/animated-theme-toggler";
 import avatar from "../componentStyle/img/avatar.jpg";
 
 const NAV_ITEMS = [
@@ -24,11 +25,25 @@ const navLinkClass = ({ isActive }) =>
     "group flex items-baseline gap-3 py-2 transition-colors " +
     (isActive ? "text-ink" : "text-muted hover:text-ink");
 
+const TOOL_LABELS = {
+    checkpoints: "path checkpoints",
+    tile: "rotation tile",
+    lights: "light panel",
+};
+
 export default function Root() {
-    // Toggles every 3D debug rig (checkpoint markers, debug tile, light panel);
-    // reaches the scene via Outlet context. Always starts hidden.
-    const [debug, setDebug] = useState(false);
-    const toggleDebug = () => setDebug((d) => !d);
+    // Per-box switches for the 3D debug rigs; reaches the scene via Outlet
+    // context. Everything starts hidden.
+    const [tools, setTools] = useState({ checkpoints: false, tile: false, lights: false });
+    const [toolsOpen, setToolsOpen] = useState(false);
+    const anyTool = Object.values(tools).some(Boolean);
+
+    // Light/dark switch: stamps data-theme on <html>; the CSS token overrides
+    // in index.css do the rest. Dark is the default look.
+    const [theme, setTheme] = useState("dark");
+    useEffect(() => {
+        document.documentElement.dataset.theme = theme;
+    }, [theme]);
 
     return (
         <div className="min-h-screen bg-page flex flex-col">
@@ -62,17 +77,15 @@ export default function Root() {
                 </nav>
 
                 <div className="flex items-center gap-4 max-nav:hidden">
-                    <button
-                        onClick={toggleDebug}
-                        title="toggle 3D debug tools"
-                        className={`font-plex text-[0.62rem] border rounded px-2 py-1 transition-colors cursor-pointer ${
-                            debug
-                                ? "border-accent text-accent"
-                                : "border-hairline text-muted hover:text-ink hover:border-accent-dim"
-                        }`}
-                    >
-                        debug
-                    </button>
+                    {/* MagicUI toggler in controlled mode: it runs the circular
+                        view-transition reveal, we keep owning the data-theme attr */}
+                    <AnimatedThemeToggler
+                        theme={theme}
+                        onThemeChange={setTheme}
+                        duration={900}
+                        title={theme === "dark" ? "switch to light background" : "switch to dark background"}
+                        className="text-muted hover:text-accent transition-colors cursor-pointer [&_svg]:w-[18px] [&_svg]:h-[18px]"
+                    />
                     {SOCIALS.map((s) => (
                         <a
                             key={s.label}
@@ -84,6 +97,38 @@ export default function Root() {
                     ))}
                 </div>
             </header>
+
+            {/* debug tools dropdown, pinned just under the topbar */}
+            <div className="fixed right-6 top-16 z-30 font-plex text-[0.62rem] max-nav:hidden">
+                <button
+                    onClick={() => setToolsOpen((o) => !o)}
+                    className={`border rounded px-2 py-1 transition-colors cursor-pointer bg-page/85 backdrop-blur ${
+                        anyTool
+                            ? "border-accent text-accent"
+                            : "border-hairline text-muted hover:text-ink hover:border-accent-dim"
+                    }`}
+                >
+                    debug tools {toolsOpen ? "▴" : "▾"}
+                </button>
+                {toolsOpen && (
+                    <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-hairline bg-page/90 backdrop-blur p-2.5">
+                        {Object.entries(TOOL_LABELS).map(([key, label]) => (
+                            <label
+                                key={key}
+                                className="flex items-center gap-2 cursor-pointer text-ink-dim hover:text-ink transition-colors select-none"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={tools[key]}
+                                    onChange={() => setTools((t) => ({ ...t, [key]: !t[key] }))}
+                                    className="accent-[--color-accent]"
+                                />
+                                {label}
+                            </label>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <div className="flex flex-1 max-nav:flex-col">
                 {/* sidebar parked while the full-width animation is in play */}
@@ -140,7 +185,7 @@ export default function Root() {
                 )}
 
                 <main className="flex-1 min-w-0 bg-page">
-                    <Outlet context={{ debug }} />
+                    <Outlet context={{ debug: tools }} />
                 </main>
             </div>
             <Footer />

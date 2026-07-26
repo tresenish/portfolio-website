@@ -17,11 +17,11 @@ const STATS = [
   { value: "10+", label: "technologies" },
 ];
 
-/* Bottom cards: solid white so the dark bottom gradient can't shade through,
-   with a glass-like edge and a soft lift shadow. */
+/* Bottom cards: solid (bg-card token) so the bottom gradient can't shade
+   through, with a hairline edge, top highlight, and a soft lift shadow. */
 const GLASS =
-  "rounded-2xl border border-hairline bg-white " +
-  "shadow-[0_8px_32px_rgba(28,30,33,0.08),inset_0_1px_0_rgba(255,255,255,0.9)]";
+  "rounded-2xl border border-hairline bg-card " +
+  "shadow-[0_8px_32px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.06)]";
 
 /* Default view of the content pane: the model, framed by a headline + CTAs and GitHub activity. */
 export default function Home() {
@@ -32,8 +32,8 @@ export default function Home() {
         <CuboidScene debug={debug} />
       </div>
 
-      {/* bottom anchor: page fades into a neutral dark shade below the ribbon */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-60% to-black/20" />
+      {/* bottom anchor: page fades toward pure black below the ribbon */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-60% to-black/50" />
 
       {/* pointer-events-none so the canvas stays interactive; re-enabled on content */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-10 max-nav:p-6 text-ink">
@@ -41,7 +41,7 @@ export default function Home() {
             directly over the scene so the ribbon stays visible; only the
             small pills are glass */}
         <div className="pointer-events-auto w-fit">
-          <span className="inline-flex items-center gap-2.5 rounded-full border border-white/50 bg-white/25 backdrop-blur-md px-3.5 py-1.5 font-plex text-[0.64rem] tracking-[0.16em] uppercase text-ink-dim">
+          <span className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-page/50 backdrop-blur-md px-3.5 py-1.5 font-plex text-[0.64rem] tracking-[0.16em] uppercase text-ink-dim">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-ink opacity-40 animate-ping motion-reduce:animate-none"></span>
               <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-ink"></span>
@@ -51,7 +51,7 @@ export default function Home() {
           <p className="mt-7 mb-4 font-plex text-[0.7rem] tracking-[0.32em] uppercase text-muted">
             Volodymyr Korol — Frontend Team Lead
           </p>
-          <h1 className="max-w-[34rem] text-[clamp(2.2rem,4.2vw,3.6rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-black">
+          <h1 className="max-w-[34rem] text-[clamp(2.2rem,4.2vw,3.6rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
             I build high-performance web apps, dashboards &amp; AI-powered tools.
           </h1>
           <div className="mt-9 flex items-center gap-4 flex-wrap">
@@ -64,7 +64,7 @@ export default function Home() {
             </Link>
             <Link
               to="/resume"
-              className="rounded-full border border-white/50 bg-white/25 backdrop-blur-md px-6 py-2.5 text-[0.9rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
+              className="rounded-full border border-hairline bg-page/50 backdrop-blur-md px-6 py-2.5 text-[0.9rem] font-medium text-ink-dim transition-colors hover:border-accent-dim hover:text-ink"
             >
               Resume
             </Link>

@@ -11,9 +11,15 @@ import {
   Color,
   CanvasTexture,
   RepeatWrapping,
+  Euler,
+  Vector3,
 } from "three";
+import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 
-const SPACING = 0.55;      // distance between tile centers along the chain
+// RectAreaLight needs its BRDF lookup tables initialized once per app.
+RectAreaLightUniformsLib.init();
+
+const SPACING = 0.7;       // distance between tile centers along the chain
 const SCROLL_SPEED = 1.0;  // marquee drift, world units per second
 const TILT = 0.45;         // turn each tile's face toward the camera (radians)
 // Checkpoints 1..35 are stretched across the full visible width:
@@ -33,6 +39,7 @@ const ROT_KEYFRAMES = [
   { pos: 19, rot: [-2.612, -0.452, 0.112] }, // X -149.6°, Y -25.9°, Z 6.4°
   { pos: 21, rot: [-2.310, -0.452, 0.112] }, // X -132.4°, Y -25.9°, Z 6.4° — at the spike
   { pos: 27, rot: [-1.171, 0.212, 0.605] },  // X -67.1°, Y 12.2°, Z 34.7° — recover in the U
+  { pos: 30, rot: [-1.768, 0.177, 0.826] },  // X -101.3°, Y 10.1°, Z 47.3°
   { pos: 35, rot: [-1.89, -0.28, 0.43] },
 ];
 const KEY_FADE = 3;
@@ -47,14 +54,19 @@ const PATH_Y = [
 ];
 
 // Depth per checkpoint (world z; 0 = the ribbon's original plane, negative =
-// toward the camera). Sculpted by dragging markers horizontally, then baked
-// back here like PATH_Y. Current shape: a full-width arc — both screen edges
-// closest to the viewer (-5), checkpoint 21 pushed away to +5.
+// toward the camera). Current shape: one smooth run from -5 (left edge,
+// closest to the viewer) to +5 (off-screen right, farthest) — an eased
+// smoothstep ramp, no return arc. Previous full-width arc (edges near,
+// checkpoint 21 far): [-5.000, -4.930, -4.720, -4.390, -3.960, -3.440,
+// -2.840, -2.180, -1.480, -0.750, -0.048, 0.711, 1.353, 2.044, 2.744,
+// 3.431, 3.914, 4.380, 4.724, 4.930, 5.027, 4.777, 4.419, 3.764, 3.031,
+// 2.157, 1.060, 0.072, -1.136, -2.291, -3.103, -3.877, -4.536, -4.902,
+// -5.031, -5.000]
 const PATH_Z = [
-  -5.000, -4.930, -4.720, -4.390, -3.960, -3.440, -2.840, -2.180, -1.480,
-  -0.750, -0.048, 0.711, 1.353, 2.044, 2.744, 3.431, 3.914, 4.380,
-  4.724, 4.930, 5.027, 4.777, 4.419, 3.764, 3.031, 2.157, 1.060,
-  0.072, -1.136, -2.291, -3.103, -3.877, -4.536, -4.902, -5.031, -5.000,
+  -5.000, -4.976, -4.906, -4.792, -4.638, -4.446, -4.219, -3.960, -3.671,
+  -3.356, -3.017, -2.658, -2.280, -1.886, -1.480, -1.064, -0.641, -0.214,
+  0.214, 0.641, 1.064, 1.480, 1.886, 2.280, 2.658, 3.017, 3.356,
+  3.671, 3.960, 4.219, 4.446, 4.638, 4.792, 4.906, 4.976, 5.000,
 ];
 
 // Smooth curve through a checkpoint-sample array at position p (clamped outside 1..36).
@@ -119,12 +131,13 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// white ramp with a whisper of cool grey — on the white page the ribbon is
-// drawn entirely by the light rig, shadows, and grain (7 is coprime with the
-// i*3 stride, so all stops get used and neighbors never repeat). For
-// reference — graphite ramp: ["#3a3d43", "#43474e", "#4d5159", "#575c64",
-// "#61666f", "#6b717b", "#757c86"]; blue ramp: ["#f2f8ff", "#e0eefe",
-// "#cde4fd", "#b9d8fc", "#a5ccfb", "#90bef9", "#7cb0f8"]
+// shades-of-white ramp — every tile a slightly different white, so the
+// ribbon shimmers under the light rig (7 is coprime with the i*3 stride, so
+// all stops get used and neighbors never repeat). For reference — faded
+// red/orange/blue/purple mix (ordered so the stride's visit sequence
+// 0,3,6,2,5,1,4 alternates warm/cool): ["#d05f50", "#bf5546", "#9678c2",
+// "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]; graphite ramp: ["#3a3d43",
+// "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
 const COLORS = ["#ffffff", "#fafbfc", "#f5f7f9", "#f0f3f5", "#ebeef1", "#e5e9ed", "#dfe4e9"];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
@@ -441,6 +454,7 @@ function TileRibbon({ geometry, debug, grain }) {
             >
               {selected === p ? (
                 /* per-checkpoint coordinate editor (click marker to toggle) */
+                <DraggablePanel>
                 <div className="font-plex text-[0.62rem] leading-relaxed text-ink bg-page/90 border border-hairline rounded-md px-2 py-1.5 text-left select-none">
                   <div className="mb-0.5 text-muted">checkpoint {p}</div>
                   {["y", "z"].map((axis) => (
@@ -480,6 +494,7 @@ function TileRibbon({ geometry, debug, grain }) {
                     </button>
                   </div>
                 </div>
+                </DraggablePanel>
               ) : (
                 <div className="font-plex text-[0.62rem] text-ink bg-page/70 rounded px-1 leading-tight text-center">
                   {p}
@@ -542,6 +557,43 @@ const SIDE_LEGEND = {
   back: "back edge",
 };
 const AXIS_COLORS = { x: WORLD_AXES[0], y: WORLD_AXES[1], z: WORLD_AXES[2] };
+
+// Wraps an info box with a screen-space drag offset: grab the dot at the
+// top-left corner to move the box anywhere (offset is in CSS pixels, so it
+// survives camera/viewport math untouched).
+function DraggablePanel({ children }) {
+  const [off, setOff] = useState({ x: 0, y: 0 });
+  const drag = useRef(null); // { px, py, ox, oy }
+  useEffect(() => {
+    const move = (e) => {
+      const d = drag.current;
+      if (!d) return;
+      setOff({ x: d.ox + e.clientX - d.px, y: d.oy + e.clientY - d.py });
+    };
+    const up = () => {
+      drag.current = null;
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+  }, []);
+  return (
+    <div className="relative" style={{ transform: `translate(${off.x}px, ${off.y}px)` }}>
+      <div
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          drag.current = { px: e.clientX, py: e.clientY, ox: off.x, oy: off.y };
+        }}
+        title="drag to move this box"
+        className="absolute -top-1.5 -left-1.5 z-10 w-3.5 h-3.5 rounded-full bg-page border-2 border-accent-dim hover:border-accent cursor-move"
+      />
+      {children}
+    </div>
+  );
+}
 
 // Grabbable rotation handle. X and Y are fat bars along their axis; Z points
 // straight at the camera (invisible end-on), so it's a ring around the tile
@@ -655,84 +707,98 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
         </mesh>
       </group>
 
-      {/* anchored on the tile's screen-right side (world -x), grows away from it */}
+      {/* anchored on the tile's screen-right side (world -x), grows away from
+          it; laid out as side-by-side columns to stay short and not cover
+          the ribbon below */}
       <Html position={[-8.0, 2.0, 0]} style={{ whiteSpace: "nowrap" }}>
-        <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-2.5 py-1.5 select-none">
-          {["x", "y", "z"].map((axis) => (
-            <div key={axis} className="flex items-center gap-2 py-0.5">
-              <span
-                className="w-16 cursor-ew-resize"
-                style={{ color: AXIS_COLORS[axis] }}
-                onPointerDown={startDrag(axis, 0.005)}
-                title="drag to scrub"
-              >
-                {axis.toUpperCase()} ({AXIS_NAMES[axis]})
-              </span>
-              <input
-                type="number"
-                step="1"
-                value={((rot[axis] * 180) / Math.PI).toFixed(1)}
-                onChange={setDegrees(axis)}
-                className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
-              />
-              <span className="text-muted">° | {rot[axis].toFixed(3)} rad</span>
-            </div>
-          ))}
-          <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
-            <span className="text-muted">at pos</span>
-            <input
-              type="number"
-              value={checkpoint}
-              onChange={(e) => setCheckpoint(e.target.value)}
-              placeholder="32"
-              className="w-12 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
-            />
-            <button
-              onClick={copyRotation}
-              className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
-            >
-              {copied ? "copied!" : "copy"}
-            </button>
-            <button
-              onClick={() => setRot({ x: PITCH, y: TILT, z: 0 })}
-              title="back to the ribbon tiles' current rotation"
-              className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
-            >
-              reset
-            </button>
-          </div>
-          {/* load a choreography keyframe onto the tile to inspect / retune it */}
-          <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-1.5 flex-wrap">
-            <span className="text-muted">show kf</span>
-            {ROT_KEYFRAMES.map(({ pos, rot: kfRot }) => (
-              <button
-                key={pos}
-                onClick={() => {
-                  setRot({ x: kfRot[0], y: kfRot[1], z: kfRot[2] });
-                  setCheckpoint(String(pos));
-                }}
-                className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
-                  checkpoint === String(pos)
-                    ? "border-accent text-accent"
-                    : "border-hairline text-ink-dim hover:text-ink hover:border-accent-dim"
-                }`}
-              >
-                {pos}
-              </button>
-            ))}
-          </div>
-          <div className="mt-1.5 pt-1.5 border-t border-hairline grid grid-cols-2 gap-x-3">
-            {Object.entries(SIDE_LEGEND).map(([side, label]) => (
-              <div key={side} className="flex items-center gap-1.5">
+        <DraggablePanel>
+        <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-3 py-1.5 select-none flex gap-4">
+          {/* column 1: live rotation + controls */}
+          <div>
+            {["x", "y", "z"].map((axis) => (
+              <div key={axis} className="flex items-center gap-2 py-0.5">
                 <span
-                  className="inline-block w-2.5 h-2.5 rounded-sm border border-hairline"
-                  style={{ backgroundColor: SIDE_COLORS[side] }}
-                ></span>
-                <span className="text-muted">{label}</span>
+                  className="w-16 cursor-ew-resize"
+                  style={{ color: AXIS_COLORS[axis] }}
+                  onPointerDown={startDrag(axis, 0.005)}
+                  title="drag to scrub"
+                >
+                  {axis.toUpperCase()} ({AXIS_NAMES[axis]})
+                </span>
+                <input
+                  type="number"
+                  step="1"
+                  value={((rot[axis] * 180) / Math.PI).toFixed(1)}
+                  onChange={setDegrees(axis)}
+                  className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+                />
+                <span className="text-muted">° | {rot[axis].toFixed(3)} rad</span>
               </div>
             ))}
+            <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
+              <span className="text-muted">at pos</span>
+              <input
+                type="number"
+                value={checkpoint}
+                onChange={(e) => setCheckpoint(e.target.value)}
+                placeholder="32"
+                className="w-12 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+              />
+              <button
+                onClick={copyRotation}
+                className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+              >
+                {copied ? "copied!" : "copy"}
+              </button>
+              <button
+                onClick={() => setRot({ x: PITCH, y: TILT, z: 0 })}
+                title="back to the ribbon tiles' current rotation"
+                className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+              >
+                reset
+              </button>
+            </div>
+            <div className="mt-1.5 pt-1.5 border-t border-hairline grid grid-cols-3 gap-x-3">
+              {Object.entries(SIDE_LEGEND).map(([side, label]) => (
+                <div key={side} className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-sm border border-hairline"
+                    style={{ backgroundColor: SIDE_COLORS[side] }}
+                  ></span>
+                  <span className="text-muted">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* column 2: the full choreography; click a row to load it */}
+          <div className="border-l border-hairline pl-4">
+            <div className="text-muted mb-0.5">keyframes (click to load)</div>
+            <div>
+              {ROT_KEYFRAMES.map(({ pos, rot: kfRot }) => {
+                const deg = (v) => ((v * 180) / Math.PI).toFixed(1);
+                const isActive = checkpoint === String(pos);
+                return (
+                  <div
+                    key={pos}
+                    onClick={() => {
+                      setRot({ x: kfRot[0], y: kfRot[1], z: kfRot[2] });
+                      setCheckpoint(String(pos));
+                    }}
+                    className={`flex items-baseline gap-2 py-0.5 cursor-pointer transition-colors ${
+                      isActive ? "text-accent" : "text-ink-dim hover:text-ink"
+                    }`}
+                  >
+                    <span className={`w-6 shrink-0 text-right ${isActive ? "" : "text-muted"}`}>{pos}</span>
+                    <span className="whitespace-nowrap tabular-nums">
+                      X {deg(kfRot[0])}° · Y {deg(kfRot[1])}° · Z {deg(kfRot[2])}°
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+        </DraggablePanel>
       </Html>
     </group>
   );
@@ -743,11 +809,20 @@ function DebugTile({ geometry, position = [0, 3.6, 0] }) {
 // it on/off, then copy the result as ready-to-paste JSX props. X scrub is
 // inverted so dragging right moves the lamp screen-right (world -x, camera
 // looks from -z).
-// Ordered screen-left to screen-right (world +x = screen-left).
+// Ordered screen-left to screen-right (world +x = screen-left). The last
+// entry is a RectAreaLight "line" strip: it runs along x above the ribbon,
+// faces straight down, and exposes width (length) + height (strip thickness)
+// on top of the usual coords. Area lights don't cast shadows.
+const degToRad = (d) => (d * Math.PI) / 180;
 const LIGHT_DEFAULTS = [
-  { x: 12.5, y: -3.5, z: -6.0, intensity: 40, on: true }, // light 1 — left (key, low)
-  { x: -0.3, y: 4.3, z: 4.5, intensity: 50, on: true },   // light 2 — center (deep fill)
-  { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: true }, // light 3 — right (accent)
+  { x: 12.5, y: -3.5, z: -6.0, intensity: 40, on: false }, // light 1 — left (key, low)
+  { x: 0.7, y: 3.3, z: 4.5, intensity: 30, on: true },     // light 2 — center (deep fill)
+  { x: -9.0, y: 4.5, z: -7.0, intensity: 130, on: false }, // light 3 — right (accent)
+  // light 4 — line strip above the ribbon; rx/ry/rz aim it (degrees,
+  // rx -90 = straight down, rx 0 = at the camera side). ry slants the strip
+  // along the ribbon's depth ramp (PATH_Z runs -5 near / left edge to +5
+  // far / right edge); 160 ≈ the 20° slant with the strip flipped, hand-tuned.
+  { x: 0.0, y: 8.5, z: 0.0, intensity: 10, width: 30, height: 1.4, rx: -230, ry: 160, rz: 0, on: true, line: true },
 ];
 const LIGHT_ROWS = [
   { key: "x", label: "X (screen ←→)", color: AXIS_COLORS.x, scale: -0.03 },
@@ -755,9 +830,23 @@ const LIGHT_ROWS = [
   { key: "z", label: "Z (depth)", color: AXIS_COLORS.z, scale: 0.03 },
   { key: "intensity", label: "intensity", color: "#facc15", scale: 0.8 },
 ];
+// Extra rows shown only while the line light is selected. Rotations are in
+// degrees; the rays in the scene follow them live.
+const LINE_ROWS = [
+  { key: "width", label: "width (length)", color: "#f472b6", scale: 0.06 },
+  { key: "height", label: "height (thick)", color: "#f472b6", scale: 0.01 },
+  { key: "rx", label: "rot X (aim ↕)", color: AXIS_COLORS.x, scale: 2 },
+  { key: "ry", label: "rot Y (swing ↔)", color: AXIS_COLORS.y, scale: 2 },
+  { key: "rz", label: "rot Z (roll)", color: AXIS_COLORS.z, scale: 2 },
+];
 
 function DebugLight({ debug }) {
   const [lights, setLights] = useState(LIGHT_DEFAULTS);
+  // uniform base fill; off by default so the line light owns the scene
+  const [ambient, setAmbient] = useState({ intensity: 0.28, on: false });
+  // shadow rig: RectAreaLights can't cast shadows, so a dim directional
+  // light projects tile-on-tile shadows — but it also adds steady top light
+  const [shadowRig, setShadowRig] = useState({ intensity: 0.9, on: true });
   const [active, setActive] = useState(0);
   const light = lights[active];
   const drag = useRef(null); // { key, px, py, scale }
@@ -779,7 +868,11 @@ function DebugLight({ debug }) {
         ls.map((l, i) => {
           if (i !== active) return l;
           const v = l[d.key] + (dx - dy) * d.scale;
-          return { ...l, [d.key]: d.key === "intensity" ? Math.max(0, v) : v };
+          const clamped =
+            d.key === "intensity" ? Math.max(0, v)
+            : d.key === "width" || d.key === "height" ? Math.max(0.05, v)
+            : v;
+          return { ...l, [d.key]: clamped };
         })
       );
     };
@@ -807,12 +900,16 @@ function DebugLight({ debug }) {
 
   const [copied, setCopied] = useState(false);
   const copyLights = async () => {
-    const text = lights
-      .map(
-        (l, i) =>
-          `${l.on ? "" : "// (off) "}position={[${l.x.toFixed(1)}, ${l.y.toFixed(1)}, ${l.z.toFixed(1)}]} intensity={${Math.round(l.intensity)}}`
-      )
-      .join("\n");
+    const text = [
+      `${ambient.on ? "" : "// (off) "}ambient intensity={${ambient.intensity.toFixed(2)}}`,
+      `${shadowRig.on ? "" : "// (off) "}shadow-rig directional intensity={${shadowRig.intensity.toFixed(1)}}`,
+      ...lights.map((l) => {
+        const base = `${l.on ? "" : "// (off) "}position={[${l.x.toFixed(1)}, ${l.y.toFixed(1)}, ${l.z.toFixed(1)}]}`;
+        return l.line
+          ? `${base} rot={[${Math.round(l.rx)}, ${Math.round(l.ry)}, ${Math.round(l.rz)}]}deg width={${l.width.toFixed(1)}} height={${l.height.toFixed(2)}} intensity={${Math.round(l.intensity)}} // line`
+          : `${base} intensity={${Math.round(l.intensity)}}`;
+      }),
+    ].join("\n");
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -824,9 +921,41 @@ function DebugLight({ debug }) {
 
   return (
     <>
+      {ambient.on && <ambientLight intensity={ambient.intensity} />}
+      {shadowRig.on && (
+        <directionalLight
+          position={[2, 9, -5]}
+          intensity={shadowRig.intensity}
+          castShadow
+          shadow-intensity={0.7}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-left={-18}
+          shadow-camera-right={18}
+          shadow-camera-top={12}
+          shadow-camera-bottom={-12}
+          shadow-camera-near={0.5}
+          shadow-camera-far={40}
+          shadow-radius={10}
+          shadow-blurSamples={20}
+        />
+      )}
       {lights.map(
         (l, i) =>
-          l.on && (
+          l.on &&
+          (l.line ? (
+            // "sun line": RectAreaLights are one-sided, so two strips sit
+            // back-to-back on the same transform and radiate both ways —
+            // together they emit all around the line (rx/ry/rz still aims it)
+            <group
+              key={i}
+              position={[l.x, l.y, l.z]}
+              rotation={[degToRad(l.rx), degToRad(l.ry), degToRad(l.rz)]}
+            >
+              <rectAreaLight width={l.width} height={l.height} intensity={l.intensity} />
+              <rectAreaLight rotation={[Math.PI, 0, 0]} width={l.width} height={l.height} intensity={l.intensity} />
+            </group>
+          ) : (
             <pointLight
               key={i}
               position={[l.x, l.y, l.z]}
@@ -841,26 +970,102 @@ function DebugLight({ debug }) {
               shadow-radius={16}
               shadow-blurSamples={24}
             />
-          )
+          ))
       )}
       {debug && (
       <>
-      {/* lamp markers — yellow = selected, grey = the other one, faded = off */}
-      {lights.map((l, i) => (
-        <mesh key={i} position={[l.x, l.y, l.z]} renderOrder={11}>
-          <sphereGeometry args={[0.14, 12, 12]} />
-          <meshBasicMaterial
-            color={i === active ? "#facc15" : "#8b9096"}
-            transparent
-            opacity={l.on ? 1 : 0.35}
-            depthTest={false}
-          />
-        </mesh>
-      ))}
+      {/* lamp markers — yellow = selected, grey = others, faded = off;
+          the line light draws as a thin bar matching its width, with ray
+          arrows showing its emission direction (straight down, -y) */}
+      {lights.map((l, i) => {
+        const color = i === active ? "#facc15" : "#8b9096";
+        return (
+          <group
+            key={i}
+            position={[l.x, l.y, l.z]}
+            rotation={l.line ? [degToRad(l.rx), degToRad(l.ry), degToRad(l.rz)] : [0, 0, 0]}
+          >
+            {l.line ? (
+              // the bar is split into segments shaded by camera distance:
+              // the end nearer the viewer draws bright, the far end dark
+              (() => {
+                const N = 12;
+                const euler = new Euler(degToRad(l.rx), degToRad(l.ry), degToRad(l.rz));
+                const segs = Array.from({ length: N }, (_, s) => {
+                  const t = (-0.5 + (s + 0.5) / N) * l.width;
+                  const wz = l.z + new Vector3(t, 0, 0).applyEuler(euler).z;
+                  return { t, wz };
+                });
+                const zs = segs.map((s) => s.wz);
+                const zmin = Math.min(...zs);
+                const zmax = Math.max(...zs);
+                return segs.map(({ t, wz }, s) => {
+                  // camera sits at -z, so smaller world z = closer to the user
+                  const f = zmax === zmin ? 0 : (wz - zmin) / (zmax - zmin);
+                  const opacity = (l.on ? 1 : 0.35) * (1 - 0.7 * f);
+                  return (
+                    <mesh key={s} position={[t, 0, 0]} renderOrder={11}>
+                      <boxGeometry args={[l.width / N, 0.25, 0.08]} />
+                      <meshBasicMaterial color={color} transparent opacity={opacity} depthTest={false} />
+                    </mesh>
+                  );
+                });
+              })()
+            ) : (
+              <mesh renderOrder={11}>
+                <sphereGeometry args={[0.14, 12, 12]} />
+                <meshBasicMaterial
+                  color={color}
+                  transparent
+                  opacity={l.on ? 1 : 0.35}
+                  depthTest={false}
+                />
+              </mesh>
+            )}
+            {/* the strip now emits from both faces (sun line), so rays fan
+                out both ways along local ±z; they fade with distance */}
+            {l.line &&
+              l.on &&
+              Array.from({ length: 7 }, (_, k) => {
+                const t = (k / 6 - 0.5) * l.width * 0.9;
+                const SEGMENTS = [0.75, 0.5, 0.3, 0.15];
+                const segLen = 0.7;
+                return (
+                  <group key={k} position={[t, 0, 0]}>
+                    {[-1, 1].map((dir) => (
+                      <group key={dir}>
+                        {SEGMENTS.map((op, s) => (
+                          <mesh
+                            key={s}
+                            position={[0, 0, dir * (s + 0.5) * segLen]}
+                            rotation={[Math.PI / 2, 0, 0]}
+                            renderOrder={11}
+                          >
+                            <cylinderGeometry args={[0.012, 0.012, segLen, 6]} />
+                            <meshBasicMaterial color={color} transparent opacity={op} depthTest={false} />
+                          </mesh>
+                        ))}
+                        <mesh
+                          position={[0, 0, dir * (SEGMENTS.length * segLen + 0.08)]}
+                          rotation={[dir > 0 ? Math.PI / 2 : -Math.PI / 2, 0, 0]}
+                          renderOrder={11}
+                        >
+                          <coneGeometry args={[0.05, 0.16, 8]} />
+                          <meshBasicMaterial color={color} transparent opacity={0.12} depthTest={false} />
+                        </mesh>
+                      </group>
+                    ))}
+                  </group>
+                );
+              })}
+          </group>
+        );
+      })}
 
       {/* panel sits just left of the debug tile's info box (which anchors at
           world [-8, 5.6]); this one grows rightward toward it */}
       <Html position={[-3.2, 5.6, 0]} style={{ whiteSpace: "nowrap" }}>
+        <DraggablePanel>
         <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-2.5 py-1.5 select-none">
           <div className="mb-1 flex items-center gap-1.5">
             {lights.map((l, i) => (
@@ -873,7 +1078,7 @@ function DebugLight({ debug }) {
                     : "border-hairline text-ink-dim hover:text-ink hover:border-accent-dim"
                 }`}
               >
-                light {i + 1}
+                {l.line ? "line" : `light ${i + 1}`}
               </button>
             ))}
             <button
@@ -888,7 +1093,7 @@ function DebugLight({ debug }) {
               {light.on ? "on" : "off"}
             </button>
           </div>
-          {LIGHT_ROWS.map(({ key, label, color, scale }) => (
+          {[...LIGHT_ROWS, ...(light.line ? LINE_ROWS : [])].map(({ key, label, color, scale }) => (
             <div key={key} className="flex items-center gap-2 py-0.5">
               <span
                 className="w-24 cursor-ew-resize"
@@ -900,13 +1105,81 @@ function DebugLight({ debug }) {
               </span>
               <input
                 type="number"
-                step={key === "intensity" ? "10" : "0.5"}
+                step={key === "intensity" ? "10" : key === "rx" || key === "ry" || key === "rz" ? "5" : "0.5"}
                 value={key === "intensity" ? Math.round(light[key]) : light[key].toFixed(1)}
                 onChange={setValue(key)}
                 className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
               />
             </div>
           ))}
+          {/* all lights at a glance (click a row to select it for editing) */}
+          <div className="mt-1.5 pt-1.5 border-t border-hairline">
+            {lights.map((l, i) => (
+              <div
+                key={i}
+                onClick={() => setActive(i)}
+                className={`flex items-baseline gap-2 py-0.5 cursor-pointer transition-colors ${
+                  i === active ? "text-ink" : "text-muted hover:text-ink-dim"
+                }`}
+              >
+                <span className={`w-7 shrink-0 ${i === active ? "text-accent" : ""}`}>
+                  {l.line ? "line" : `L${i + 1}`}
+                </span>
+                <span className="whitespace-nowrap">
+                  [{l.x.toFixed(1)}, {l.y.toFixed(1)}, {l.z.toFixed(1)}] · {Math.round(l.intensity)}
+                  {l.line &&
+                    ` · rot [${Math.round(l.rx)}, ${Math.round(l.ry)}, ${Math.round(l.rz)}]° · ${l.width.toFixed(1)}×${l.height.toFixed(2)}`}
+                </span>
+                {!l.on && <span className="text-faint">(off)</span>}
+              </div>
+            ))}
+          </div>
+          {/* scene-wide base fill, independent of the selected light */}
+          <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
+            <button
+              onClick={() => setAmbient((a) => ({ ...a, on: !a.on }))}
+              className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                ambient.on
+                  ? "border-emerald-400/60 text-emerald-300"
+                  : "border-hairline text-faint hover:text-ink"
+              }`}
+            >
+              ambient {ambient.on ? "on" : "off"}
+            </button>
+            <input
+              type="number"
+              step="0.05"
+              min="0"
+              value={ambient.intensity.toFixed(2)}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!Number.isNaN(v)) setAmbient((a) => ({ ...a, intensity: Math.max(0, v) }));
+              }}
+              className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+            />
+            <button
+              onClick={() => setShadowRig((s) => ({ ...s, on: !s.on }))}
+              title="directional light that projects tile shadows (area lights can't)"
+              className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                shadowRig.on
+                  ? "border-emerald-400/60 text-emerald-300"
+                  : "border-hairline text-faint hover:text-ink"
+              }`}
+            >
+              shadow {shadowRig.on ? "on" : "off"}
+            </button>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              value={shadowRig.intensity.toFixed(1)}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                if (!Number.isNaN(v)) setShadowRig((s) => ({ ...s, intensity: Math.max(0, v) }));
+              }}
+              className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+            />
+          </div>
           <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
             <button
               onClick={copyLights}
@@ -922,6 +1195,7 @@ function DebugLight({ debug }) {
             </button>
           </div>
         </div>
+        </DraggablePanel>
       </Html>
       </>
       )}
@@ -929,7 +1203,9 @@ function DebugLight({ debug }) {
   );
 }
 
-export default function CuboidScene({ debug = false }) {
+// debug: { checkpoints, tile, lights } — per-box switches from the topbar
+// dropdown (path markers + copy button, rotation tile, light panel).
+export default function CuboidScene({ debug = {} }) {
   const geometry = useMemo(() => makeTileGeometry(), []);
   const debugGeometry = useMemo(() => makeDebugTileGeometry(), []);
   const grain = useMemo(
@@ -947,15 +1223,16 @@ export default function CuboidScene({ debug = false }) {
         camera={{ zoom: 55, position: [0, 1.2, -14] }}
         onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
       >
-        <ambientLight intensity={0.28} />
+        {/* ambient fill + shadow-rig directional live in DebugLight now
+            (each has a panel switch) */}
         {/* lamp hung high above the ribbon, pulled slightly toward the camera.
             decay=2 is physical inverse-square falloff: the lower a tile dips,
             the farther it is from the lamp, the darker it gets — for free.
             With decay 2, intensity is in candela-like units, hence the big number.
             DebugLight wraps the point light with a live position/intensity panel. */}
-        <DebugLight debug={debug} />
-        <TileRibbon geometry={geometry} debug={debug} grain={grain} />
-        {debug && <DebugTile geometry={debugGeometry} />}
+        <DebugLight debug={debug.lights} />
+        <TileRibbon geometry={geometry} debug={debug.checkpoints} grain={grain} />
+        {debug.tile && <DebugTile geometry={debugGeometry} />}
       </Canvas>
     </div>
   );

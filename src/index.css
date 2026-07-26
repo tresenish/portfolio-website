@@ -4,19 +4,20 @@
   --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
   --font-plex: "IBM Plex Mono", monospace;
 
-  /* neutral light palette (previous dark: page #131416, panel #17181b,
-     card #1b1d21, ink #e7e9ea, ink-dim #b6babf, muted #8b9096, faint #63686e,
-     hairline #26282c, accent #6ea8fe, accent-dim #41639c) */
-  --color-page: #ffffff;      /* main bg */
-  --color-panel: #f7f8fa;     /* sidebar / bars */
-  --color-card: #f1f3f5;      /* cards / active rows */
-  --color-ink: #1c1e21;       /* primary text */
-  --color-ink-dim: #43474e;   /* secondary text */
-  --color-muted: #5b6167;     /* tertiary text */
-  --color-faint: #8a9097;     /* smallest details */
-  --color-hairline: #e4e6ea;  /* borders */
-  --color-accent: #1c1e21;    /* monochrome accent — near-black */
-  --color-accent-dim: #9aa0a6;
+  /* neutral dark palette, monochrome accent (previous light: page #ffffff,
+     panel #f7f8fa, card #f1f3f5, ink #1c1e21, ink-dim #43474e, muted #5b6167,
+     faint #8a9097, hairline #e4e6ea, accent #1c1e21, accent-dim #9aa0a6;
+     original blue accent: #6ea8fe / dim #41639c) */
+  --color-page: #131416;      /* main bg */
+  --color-panel: #17181b;     /* sidebar / bars */
+  --color-card: #1b1d21;      /* cards / active rows */
+  --color-ink: #e7e9ea;       /* primary text */
+  --color-ink-dim: #b6babf;   /* secondary text */
+  --color-muted: #8b9096;     /* tertiary text */
+  --color-faint: #63686e;     /* smallest details */
+  --color-hairline: #26282c;  /* borders */
+  --color-accent: #e7e9ea;    /* monochrome accent — near-white */
+  --color-accent-dim: #63686e;
 
   --breakpoint-nav: 50rem;
 
@@ -41,6 +42,22 @@
   }
 }
 
+/* Light theme overrides — toggled from the topbar switch, which stamps
+   data-theme on <html>. Tailwind utilities read the vars at runtime, so
+   flipping the attribute retints the whole app. Dark is the default. */
+:root[data-theme="light"] {
+  --color-page: #ffffff;
+  --color-panel: #f7f8fa;
+  --color-card: #f1f3f5;
+  --color-ink: #1c1e21;
+  --color-ink-dim: #43474e;
+  --color-muted: #5b6167;
+  --color-faint: #8a9097;
+  --color-hairline: #e4e6ea;
+  --color-accent: #1c1e21;
+  --color-accent-dim: #9aa0a6;
+}
+
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -56,4 +73,8 @@ body {
   html {
     font-size: 12px !important;
   }
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

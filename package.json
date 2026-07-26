@@ -6,9 +6,12 @@
     "@react-three/drei": "^9.108.1",
     "@react-three/fiber": "^8.16.8",
     "@tailwindcss/vite": "^4.3.3",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.27.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss": "^4.3.3",
     "three": "^0.166.1"
   },
