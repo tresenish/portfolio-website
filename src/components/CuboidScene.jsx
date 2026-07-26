@@ -133,14 +133,26 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// shades-of-white ramp — every tile a slightly different white, so the
-// ribbon shimmers under the light rig (7 is coprime with the i*3 stride, so
-// all stops get used and neighbors never repeat). For reference — faded
-// red/orange/blue/purple mix (ordered so the stride's visit sequence
-// 0,3,6,2,5,1,4 alternates warm/cool): ["#d05f50", "#bf5546", "#9678c2",
-// "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]; graphite ramp: ["#3a3d43",
-// "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
-const COLORS = ["#ffffff", "#fafbfc", "#f5f7f9", "#f0f3f5", "#ebeef1", "#e5e9ed", "#dfe4e9"];
+// single-hue red ramp, blush to crimson — bright, saturated, one family.
+// 7 stops, coprime with the i*3 stride: the visit order (0,3,6,2,5,1,4)
+// interleaves light and deep stops, so neighbors always contrast in depth
+// even though every tile is red.
+// Previous palettes for reference —
+// blue ramp: ["#b5dcff", "#8ec8fd", "#67b1fa", "#4497f4", "#277ee9", "#1663d3", "#0d4bb5"]
+// mineral (light): ["#d29285", "#d4ab88", "#e0ceaa", "#b3c19f", "#96b3a7", "#94b6c2", "#92a9c9", "#9ca2c4", "#ae9cbb", "#c495a2", "#aeb0b5"]
+// pastel spectrum: ["#f59a90", "#f7b581", "#f5d27d", "#cfe184", "#96dd92", "#82dcbf", "#84cfec", "#8fb3f2", "#a893f0", "#d38fe4", "#f090bf"]
+// shades of white: ["#ffffff", "#fafbfc", "#f5f7f9", "#f0f3f5", "#ebeef1", "#e5e9ed", "#dfe4e9"]
+// faded red/orange/blue/purple (stride-ordered): ["#d05f50", "#bf5546", "#9678c2", "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]
+// graphite: ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
+const COLORS = [
+  "#ffb3a7", // blush
+  "#ff9a8a", // salmon
+  "#ff7f6e", // coral
+  "#f96352", // vermilion
+  "#ee4638", // red
+  "#d92e23", // crimson
+  "#c01d17", // deep red
+];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
 // only the 4 footprint corners rounded.
