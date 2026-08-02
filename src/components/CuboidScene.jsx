@@ -133,12 +133,13 @@ function rotAtPos(p) {
   return BASE_ROT;
 }
 
-// polarized red ramp — near-whites and true reds, no coral/orange middle:
-// the hue stays pinned on pure red, the ramp just walks lightness from
-// almost-white down to deep red. 7 stops, coprime with the i*3 stride: the
-// visit order (0,3,6,2,5,1,4) interleaves pale and deep stops, so the
-// ribbon alternates white-ish and red tiles.
+// polarized phthalo green ramp — near-whites and deep blue-greens, no
+// yellowish middle: the hue stays pinned on the pigment's cool green, the
+// ramp just walks lightness from almost-white down to deep phthalo. 7 stops,
+// coprime with the i*3 stride: the visit order (0,3,6,2,5,1,4) interleaves
+// pale and deep stops, so the ribbon alternates white-ish and green tiles.
 // Previous palettes for reference —
+// polarized red ramp: ["#fff1ef", "#ffd6d1", "#ffb4ad", "#ef6a63", "#e14b44", "#d0322c", "#b71c1c"]
 // blue ramp: ["#b5dcff", "#8ec8fd", "#67b1fa", "#4497f4", "#277ee9", "#1663d3", "#0d4bb5"]
 // mineral (light): ["#d29285", "#d4ab88", "#e0ceaa", "#b3c19f", "#96b3a7", "#94b6c2", "#92a9c9", "#9ca2c4", "#ae9cbb", "#c495a2", "#aeb0b5"]
 // pastel spectrum: ["#f59a90", "#f7b581", "#f5d27d", "#cfe184", "#96dd92", "#82dcbf", "#84cfec", "#8fb3f2", "#a893f0", "#d38fe4", "#f090bf"]
@@ -146,13 +147,13 @@ function rotAtPos(p) {
 // faded red/orange/blue/purple (stride-ordered): ["#d05f50", "#bf5546", "#9678c2", "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]
 // graphite: ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
 const COLORS = [
-  "#fff1ef", // almost white
-  "#ffd6d1", // pale blush
-  "#ffb4ad", // rose
-  "#ef6a63", // soft red
-  "#e14b44", // red
-  "#d0322c", // crimson
-  "#b71c1c", // deep red
+  "#eff9f5", // almost white
+  "#cfeee2", // pale mint
+  "#a0dcc6", // soft jade
+  "#4fb494", // jade
+  "#1f9377", // light phthalo
+  "#0b7458", // phthalo
+  "#07503d", // deep phthalo
 ];
 
 // Rounded-rectangle slab: footprint width x depth, thin along y,
@@ -244,8 +245,12 @@ function makeDebugTileGeometry() {
 function TileRibbon({ geometry, debug, grain }) {
   const ribbonRef = useRef();
   // Fill the visible width (plus margin) with tiles; they wrap around the
-  // span like a conveyor belt, so the ribbon scrolls forever.
-  const viewportWidth = useThree((s) => s.viewport.width);
+  // span like a conveyor belt, so the ribbon scrolls forever. The width is
+  // derived from the same zoomFor() the camera uses — fiber's viewport state
+  // is computed with the initial zoom and lags manual zoom changes, which
+  // left edge gaps on scaled-down small screens.
+  const screenWidth = useThree((s) => s.size.width);
+  const viewportWidth = screenWidth / zoomFor(screenWidth);
   const count = Math.ceil((viewportWidth + 4) / SPACING);
   const span = count * SPACING;
   // Checkpoint mapping: p = 1 at the VISIBLE left edge of the canvas
@@ -1257,19 +1262,31 @@ function DebugLight({ debug, theme = "dark" }) {
   );
 }
 
-// MacBook-class widths (~1512-1728 css px) keep the baseline zoom; wider
-// desktop screens (full HD and up) scale the scene up a touch so the ribbon
-// doesn't read smaller in the bigger canvas. Capped so 4K doesn't balloon.
+// Zoom rules: desktop widths (SMALL_WIDTH..1728) keep the fixed baseline
+// zoom; wider desktop screens (full HD and up) scale the scene up a touch,
+// capped so 4K doesn't balloon. Below SMALL_WIDTH the scene scales DOWN with
+// the viewport, so phones see the whole ribbon smaller instead of a zoomed-in
+// crop — floored so tiles don't shrink to specks. Pure function of width so
+// the camera and the ribbon layout always agree.
 const BASE_ZOOM = 55;
 const ZOOM_REF_WIDTH = 1728;
 const ZOOM_MAX_SCALE = 1.15;
+const SMALL_WIDTH = 1024;
+const ZOOM_MIN_SCALE = 0.4;
+
+function zoomFor(width) {
+  const scale =
+    width < SMALL_WIDTH
+      ? Math.max(ZOOM_MIN_SCALE, width / SMALL_WIDTH)
+      : Math.min(ZOOM_MAX_SCALE, Math.max(1, width / ZOOM_REF_WIDTH));
+  return BASE_ZOOM * scale;
+}
 
 function ResponsiveZoom() {
   const camera = useThree((s) => s.camera);
   const width = useThree((s) => s.size.width);
   useEffect(() => {
-    const scale = Math.min(ZOOM_MAX_SCALE, Math.max(1, width / ZOOM_REF_WIDTH));
-    camera.zoom = BASE_ZOOM * scale;
+    camera.zoom = zoomFor(width);
     camera.updateProjectionMatrix();
   }, [camera, width]);
   return null;
