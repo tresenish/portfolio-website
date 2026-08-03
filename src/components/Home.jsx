@@ -5,7 +5,6 @@ import { Link, useOutletContext } from "react-router-dom";
 import CuboidScene from "./CuboidScene";
 import ContributionGraph from "./ContributionGraph";
 import SectionLabel from "./SectionLabel";
-import StackScene from "./StackScene";
 import { projects } from "./Projects";
 
 // Below-the-fold content: what I work on day to day, in stack order.
@@ -58,7 +57,10 @@ export default function Home() {
   const GLASS = glassFor(theme);
   return (
     <>
-    <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh] animate-rise motion-reduce:animate-none">
+    {/* entrance: the scene assembles itself (tile wave inside CuboidScene)
+        while the text cascades in — each element wears its own rise with a
+        stagger delay, so no wrapper-level animation here */}
+    <div className="relative h-[calc(100vh-7rem)] max-nav:h-[70vh]">
       <div className="absolute inset-0">
         <CuboidScene debug={debug} theme={theme} />
       </div>
@@ -79,24 +81,39 @@ export default function Home() {
             small pills are glass. pointer-events stay off for the text so
             tile hover works right through it — only the links re-enable. */}
         <div className="pointer-events-none w-fit -mt-4 max-nav:mt-0">
-          <span className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-page/50 backdrop-blur-md px-3.5 py-1.5 font-plex text-[0.64rem] tracking-[0.16em] uppercase text-ink-dim">
+          <span
+            className="inline-flex items-center gap-2.5 rounded-full border border-hairline bg-page/50 backdrop-blur-md px-3.5 py-1.5 font-plex text-[0.64rem] tracking-[0.16em] uppercase text-ink-dim animate-rise motion-reduce:animate-none"
+            style={{ animationDelay: "0.1s" }}
+          >
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-ink opacity-40 animate-ping motion-reduce:animate-none"></span>
               <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-ink"></span>
             </span>
             Open to opportunities
           </span>
-          <p className="mt-7 mb-4 font-plex text-[0.85rem] tracking-[0.32em] uppercase text-muted">
+          <p
+            className="mt-7 mb-4 font-plex text-[0.85rem] tracking-[0.32em] uppercase text-muted animate-rise-soft motion-reduce:animate-none"
+            style={{ animationDelay: "0.2s" }}
+          >
             Volodymyr Korol — Full-stack Developer &amp; Frontend Team Lead
           </p>
-          <h1 className="max-w-[34rem] text-[clamp(2.2rem,4.2vw,3.6rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
+          <h1
+            className="max-w-[34rem] text-[clamp(2.2rem,4.2vw,3.6rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink animate-rise-soft motion-reduce:animate-none"
+            style={{ animationDelay: "0.3s" }}
+          >
             I build web products end to end.
           </h1>
-          <p className="mt-4 max-w-[28rem] text-[0.98rem] leading-relaxed text-muted">
+          <p
+            className="mt-4 max-w-[28rem] text-[0.98rem] leading-relaxed text-muted animate-rise-soft motion-reduce:animate-none"
+            style={{ animationDelay: "0.4s" }}
+          >
             TypeScript and React up front, Python and PostgreSQL behind,
             AI woven through.
           </p>
-          <div className="mt-9 flex items-center gap-4 flex-wrap">
+          <div
+            className="mt-9 flex items-center gap-4 flex-wrap animate-rise-soft motion-reduce:animate-none"
+            style={{ animationDelay: "0.5s" }}
+          >
             <Link
               to="/projects"
               className={`pointer-events-auto group inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-[0.9rem] font-medium transition-colors ${
@@ -125,7 +142,10 @@ export default function Home() {
 
         {/* bottom: stats (left) + GitHub activity (right) */}
         <div className="pointer-events-auto flex items-end justify-between gap-6 flex-wrap">
-          <div className={`${GLASS} flex divide-x divide-hairline px-8 py-5 max-nav:px-5 max-nav:py-4`}>
+          <div
+            className={`${GLASS} flex divide-x divide-hairline px-8 py-5 max-nav:px-5 max-nav:py-4 animate-rise-card motion-reduce:animate-none`}
+            style={{ animationDelay: "0.6s" }}
+          >
             {STATS.map((s) => (
               <div key={s.label} className="px-9 first:pl-0 max-nav:px-5 max-nav:first:pl-0">
                 <p className="text-[1.9rem] font-semibold leading-none tracking-[-0.02em] tabular-nums">{s.value}</p>
@@ -133,7 +153,10 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className={`${GLASS} w-fit max-w-full text-right px-6 py-5`}>
+          <div
+            className={`${GLASS} w-fit max-w-full text-right px-6 py-5 animate-rise-card motion-reduce:animate-none`}
+            style={{ animationDelay: "0.7s" }}
+          >
             <p className="mb-3 font-plex text-[0.66rem] tracking-[0.22em] uppercase text-muted">GitHub activity</p>
             <ContributionGraph username="tresenish" />
           </div>
@@ -170,23 +193,6 @@ export default function Home() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* the full stack, animated: browser → server → database pipeline.
-          Full-bleed like the hero — the scene is the section's background,
-          with the label and caption overlaid. */}
-      <section className="relative left-1/2 -mx-[50vw] w-screen mb-20 max-nav:mb-14">
-        <div className="relative h-[36rem] max-nav:h-[24rem]">
-          <div className="absolute inset-0">
-            <StackScene theme={theme} />
-          </div>
-          <div className="pointer-events-none absolute inset-x-0 top-0 px-[8%] pt-2 max-nav:px-[6%]">
-            <SectionLabel title="How a request travels" />
-          </div>
-          <p className="pointer-events-none absolute bottom-4 left-[8%] font-plex text-[0.68rem] text-faint max-nav:left-[6%]">
-            Every feature I ship crosses all three — interface, API, and data.
-          </p>
         </div>
       </section>
 

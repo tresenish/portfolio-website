@@ -2,7 +2,7 @@
 // Three portal machines (frontend, backend, database) straddle real conveyor
 // belts that run straight through their tunnels: frontend→backend and
 // backend→frontend as a continuous pair, backend↔database as a shuttle that
-// runs, pauses, and reverses. Bodies wear the tile ramp's reds; a studio
+// runs, pauses, and reverses. Bodies wear the tile ramp's greens; a studio
 // environment map and floor shadows keep the hardware grounded.
 import React, { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -47,7 +47,7 @@ const HEAD_H = 1.5;     // the machine head that spans the tunnel
 
 // The three belts, threaded through the station tunnels (ends hidden inside).
 // A + B are the frontend↔backend pair; C is the backend↔database shuttle.
-// Parcel colors come from the tile ramp: red out, rose back, deep red data.
+// Parcel colors come from the tile ramp: green out, mint back, deep green data.
 // `doors` are factory shutters at the frontend machine's tunnel mouth
 // (x = its right edge): they slide up as a parcel approaches and drop shut
 // a beat after it passes.
@@ -57,17 +57,17 @@ const HEAD_H = 1.5;     // the machine head that spans the tunnel
 //   belt 3 — backend ↔ database (shuttle: run, pause, reverse; crimson)
 const FE_DOOR_X = -4.45;
 const CONVEYORS = [
-  { key: "belt1", x0: -6.3, x1: -0.8, z: 0.5, dir: 1, item: "#e14b44", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } },   // belt 1: FE → BE
-  { key: "belt2", x0: -6.3, x1: -0.8, z: -0.5, dir: -1, item: "#ffb4ad", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } }, // belt 2: BE → FE
-  // belt 3: outbound query box (crimson) rides fully into the DB and is
-  // swallowed; after the pause a NEW result box (soft red) rides back and
+  { key: "belt1", x0: -6.3, x1: -0.8, z: 0.5, dir: 1, item: "#1f9377", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } },   // belt 1: FE → BE
+  { key: "belt2", x0: -6.3, x1: -0.8, z: -0.5, dir: -1, item: "#a0dcc6", doors: [FE_DOOR_X], cover: { from: -6.25, to: -4.48 } }, // belt 2: BE → FE
+  // belt 3: outbound query box (deep phthalo) rides fully into the DB and is
+  // swallowed; after the pause a NEW result box (jade) rides back and
   // is swallowed by the backend. item2 = the return box's color.
   // gate at the backend's right tunnel mouth (BE head edge ≈ x 1.125); the
   // belt reaches deep into both tunnels so the whole 3-box train ends up
   // well inside the machine at either end before it swaps
   // cover: enclosed duct over the belt stretch inside the backend, running
   // from the belt's inner end up to the gate — boxes are truly hidden there
-  { key: "belt3", x0: -1.3, x1: 5.5, z: 0, mode: "shuttle", item: "#d0322c", item2: "#ef6a63", doors: [1.15], cover: { from: -1.25, to: 1.12 } }, // belt 3: BE ↔ DB
+  { key: "belt3", x0: -1.3, x1: 5.5, z: 0, mode: "shuttle", item: "#0b7458", item2: "#4fb494", doors: [1.15], cover: { from: -1.25, to: 1.12 } }, // belt 3: BE ↔ DB
 ];
 const LINK_LABELS = [
   { x: -2.8, label: "HTTPS · REST · JSON" },
@@ -76,7 +76,7 @@ const LINK_LABELS = [
 
 // Stations wear a professional monochrome inverted per theme — white
 // machines on the dark page, black machines on the light page — while the
-// parcels on the belts carry the tile ramp's reds (the only color).
+// parcels on the belts carry the tile ramp's greens (the only color).
 const SKINS = {
   dark: {
     body: "#e9ebee", panel: "#d2d5da", screen: "#1d2026", block: "#8b9096",
@@ -418,7 +418,7 @@ function FrontendStation({ skin }) {
 }
 
 /* The brain on exhibit inside the backend's glass case: two wrinkled
-   hemispheres, cerebellum, and stem in the tile ramp's reds — floating,
+   hemispheres, cerebellum, and stem in the tile ramp's greens — floating,
    slowly turning, breathing. */
 function Brain() {
   const ref = useRef();
@@ -431,12 +431,12 @@ function Brain() {
     ref.current.scale.setScalar(s);
   });
   const matProps = {
-    color: "#ef6a63",
+    color: "#4fb494",
     roughness: 0.55,
     metalness: 0.05,
     bumpMap: getGrain(),
     bumpScale: 0.6,
-    emissive: "#d0322c",
+    emissive: "#0b7458",
     emissiveIntensity: 0.12,
     envMapIntensity: 0.6,
   };
@@ -452,17 +452,17 @@ function Brain() {
       {/* central fissure */}
       <mesh position={[0, 0.14, 0]}>
         <boxGeometry args={[0.025, 0.4, 0.68]} />
-        <meshStandardMaterial color="#9c1712" roughness={0.8} />
+        <meshStandardMaterial color="#043a2c" roughness={0.8} />
       </mesh>
       {/* cerebellum */}
       <mesh position={[0, -0.2, -0.33]} scale={[1, 0.7, 0.8]} castShadow>
         <sphereGeometry args={[0.23, 24, 18]} />
-        <meshStandardMaterial {...matProps} color="#d0322c" />
+        <meshStandardMaterial {...matProps} color="#0b7458" />
       </mesh>
       {/* stem */}
       <mesh position={[0, -0.33, -0.28]} rotation={[0.5, 0, 0]} castShadow>
         <cylinderGeometry args={[0.06, 0.08, 0.26, 12]} />
-        <meshStandardMaterial color="#b71c1c" roughness={0.6} />
+        <meshStandardMaterial color="#07503d" roughness={0.6} />
       </mesh>
     </group>
   );
@@ -478,7 +478,7 @@ function BrainExhibit() {
     const first = Object.values(actions)[0];
     first?.reset().play();
   }, [actions]);
-  // recolor the hologram's two particle systems: Particle_1 → red,
+  // recolor the hologram's two particle systems: Particle_1 → phthalo green,
   // Particle_2 → white. Emissive intensity is capped (the shipped strength
   // overexposes under tone mapping and shifts hue) but kept high enough to
   // glow brightly.
@@ -486,8 +486,8 @@ function BrainExhibit() {
     scene.traverse((o) => {
       if (o.isMesh && o.material) {
         const isWhite = o.material.name === "Particle_2";
-        o.material.color?.set(isWhite ? "#e7e9ea" : "#b71c1c");
-        o.material.emissive?.set(isWhite ? "#ffffff" : "#e14b44");
+        o.material.color?.set(isWhite ? "#e7e9ea" : "#07503d");
+        o.material.emissive?.set(isWhite ? "#ffffff" : "#1f9377");
         if (o.material.emissiveIntensity !== undefined) {
           o.material.emissiveIntensity = Math.min(o.material.emissiveIntensity, isWhite ? 1.6 : 2.2);
         }

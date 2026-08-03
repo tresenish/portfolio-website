@@ -6,10 +6,12 @@ import { Html } from "@react-three/drei";
 import {
   Shape,
   ExtrudeGeometry,
+  AdditiveBlending,
   AxesHelper,
   BufferAttribute,
   Color,
   CanvasTexture,
+  NormalBlending,
   RepeatWrapping,
   Euler,
   Vector3,
@@ -94,6 +96,19 @@ function sampleCurve(arr, p) {
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = (t) => t * t * (3 - 2 * t); // smoothstep
+
+// Entrance choreography: tiles start sunk below their path and rise into
+// place in a wave sweeping screen-left → screen-right; the dust holds back
+// and fades in once the ribbon has assembled. Reduced motion skips it all.
+const INTRO_SWEEP = 1.2;   // s — delay spread across the screen width
+const INTRO_RISE = 2.0;    // s — one tile's rise duration
+const INTRO_DROP = 11;     // world units below the path at t = 0 (well below the canvas)
+const INTRO_END = INTRO_SWEEP + INTRO_RISE;
+const DUST_FADE_START = 2.4; // s — dust waits for the ribbon…
+const DUST_FADE_DUR = 1.4;   // …then breathes in
+const REDUCED_MOTION =
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 // Fast zone: tiles accelerate between these checkpoints (they travel from
 // higher positions to lower ones), which also stretches the gaps there.
@@ -203,6 +218,130 @@ function makeGrainTexture({ size = 256, base = 108, amp = 48 } = {}) {
   tex.repeat.set(0.12, 0.12);
   tex.anisotropy = 8; // keep the grain crisp at glancing angles
   return tex;
+}
+
+// Soft round sprite for the dust motes: a white radial gradient fading to
+// transparent, so points render as feathered dots instead of hard squares.
+function makeDotTexture(size = 64) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.4, "rgba(255,255,255,0.6)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
+}
+
+/* Sparse dust motes drifting along the ribbon's path — same conveyor flow as
+   the tiles (each mote a little slower or faster), scattered loosely around
+   the curve, bobbing gently, wrapping at the span edges like the tiles do.
+   One Points cloud = one draw call; per frame it just refills a small
+   position buffer, so the layer is essentially free. */
+const DUST_PER_UNIT = 2.2; // motes per world unit of span…
+const DUST_MAX = 70;       // …capped so wide screens stay sparse
+
+// The dust rides its own copy of the path: same curve, but with the spike
+// around checkpoint 21 leveled out (linear blend across the flanking
+// samples), so the halo glides calmly past while the tiles whip through it.
+const DUST_PATH_Y = (() => {
+  const arr = [...PATH_Y];
+  const from = 18; // 0-based: checkpoint 19, before the climb into the spike
+  const to = 23;   // checkpoint 24, after the recovery
+  for (let i = from + 1; i < to; i++) {
+    arr[i] = lerp(PATH_Y[from], PATH_Y[to], (i - from) / (to - from));
+  }
+  return arr;
+})();
+
+function PathDust({ theme = "dark" }) {
+  const pointsRef = useRef();
+  const matRef = useRef();
+  // Same layout math as TileRibbon, so the dust rides exactly the tiles' path.
+  const screenWidth = useThree((s) => s.size.width);
+  const viewportWidth = screenWidth / zoomFor(screenWidth);
+  const span = Math.ceil((viewportWidth + 4) / SPACING) * SPACING;
+  const originX = viewportWidth / 2;
+  const step = viewportWidth / (CHECKPOINT_MAX - 1);
+  const count = Math.min(DUST_MAX, Math.round(span * DUST_PER_UNIT));
+
+  const sprite = useMemo(() => makeDotTexture(), []);
+  const { params, positions, colors } = useMemo(() => {
+    const params = Array.from({ length: count }, () => ({
+      u0: Math.random() * span,               // start point on the conveyor
+      speed: 0.55 + Math.random() * 0.9,      // × SCROLL_SPEED — slipstream spread
+      // scatter in a halo AROUND the ribbon: the keep-out band of ±2 keeps
+      // motes clear of the tiles themselves (slabs reach ~±1.8 around the
+      // path), slightly more of them floating above than below
+      dy: (Math.random() < 0.55 ? 1 : -1) * (2.0 + Math.random() * 1.8),
+      dz: (Math.random() - 0.5) * 1.6,
+      amp: 0.04 + Math.random() * 0.1,        // bob
+      freq: 0.5 + Math.random() * 0.9,
+      phase: Math.random() * Math.PI * 2,
+    }));
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const b = 0.35 + Math.random() * 0.65; // per-mote brightness
+      colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = b;
+    }
+    return { params, positions, colors };
+  }, [count, span]);
+
+  // Own accumulated time, same reason as the ribbon: survives frameloop
+  // pauses. Starts past the fade-in under reduced motion (dust at full).
+  const timeRef = useRef(REDUCED_MOTION ? DUST_FADE_START + DUST_FADE_DUR : 0);
+  const targetOpacity = theme === "light" ? 0.35 : 0.55;
+  useFrame((_, delta) => {
+    timeRef.current += Math.min(delta, 0.1);
+    const t = timeRef.current;
+    // entrance: hold invisible while the ribbon assembles, then breathe in
+    if (matRef.current && t < DUST_FADE_START + DUST_FADE_DUR) {
+      const f = Math.min(1, Math.max(0, (t - DUST_FADE_START) / DUST_FADE_DUR));
+      matRef.current.opacity = targetOpacity * smooth(f);
+    }
+    const pos = pointsRef.current?.geometry.attributes.position;
+    if (!pos) return;
+    for (let i = 0; i < count; i++) {
+      const d = params[i];
+      const u = (d.u0 + t * SCROLL_SPEED * d.speed) % span;
+      const x = u - span / 2;
+      const p = (originX - x) / step + 1;
+      pos.setXYZ(
+        i,
+        x,
+        sampleCurve(DUST_PATH_Y, p) + d.dy + Math.sin(t * d.freq + d.phase) * d.amp,
+        sampleCurve(PATH_Z, p) + d.dz
+      );
+    }
+    pos.needsUpdate = true;
+  });
+
+  return (
+    /* key remounts the buffer when a resize changes the count; raycast is
+       disabled so the cloud never blocks the tiles' hover lift */
+    <points key={count} ref={pointsRef} frustumCulled={false} raycast={() => {}}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" array={positions} count={count} itemSize={3} />
+        <bufferAttribute attach="attributes-color" array={colors} count={count} itemSize={3} />
+      </bufferGeometry>
+      {/* faint glow on dark (additive pale mint), pigment dust on light */}
+      <pointsMaterial
+        ref={matRef}
+        map={sprite}
+        vertexColors
+        transparent
+        opacity={targetOpacity}
+        color={theme === "light" ? "#1f9377" : "#cfeee2"}
+        size={3.5}
+        sizeAttenuation={false}
+        depthWrite={false}
+        blending={theme === "light" ? NormalBlending : AdditiveBlending}
+      />
+    </points>
+  );
 }
 
 // Debug: every side of the slab gets its own vertex color so orientation is
@@ -351,8 +490,17 @@ function TileRibbon({ geometry, debug, grain }) {
   const liftsRef = useRef(new Float32Array(0));
   if (liftsRef.current.length !== count) liftsRef.current = new Float32Array(count);
 
-  useFrame(({ clock }, delta) => {
-    const scroll = clock.elapsedTime * SCROLL_SPEED;
+  // Conveyor progress is accumulated from deltas (not clock.elapsedTime) so
+  // pausing the frameloop off-screen resumes exactly where it left off. The
+  // delta clamp swallows the one big step after a pause.
+  const scrollRef = useRef(0);
+  // Intro clock: starts past the end under reduced motion (tiles in place).
+  const introRef = useRef(REDUCED_MOTION ? INTRO_END : 0);
+  useFrame((_, delta) => {
+    scrollRef.current += Math.min(delta, 0.1) * SCROLL_SPEED;
+    introRef.current += Math.min(delta, 0.1);
+    const scroll = scrollRef.current;
+    const intro = introRef.current;
     const lifts = liftsRef.current;
     const ease = Math.min(1, delta * HOVER_EASE);
     ribbonRef.current.children.forEach((tile, i) => {
@@ -367,6 +515,12 @@ function TileRibbon({ geometry, debug, grain }) {
       const p = pOf(x);
       const [rx, ry, rz] = rotAtPos(p);
       tile.rotation.set(rx, ry, rz);
+      // entrance wave: each tile slides up from below the canvas, in screen order
+      if (intro < INTRO_END) {
+        const wait = ((p - 1) / (CHECKPOINT_MAX - 1)) * INTRO_SWEEP;
+        const k = smooth(Math.min(1, Math.max(0, (intro - wait) / INTRO_RISE)));
+        tile.position.y -= (1 - k) * INTRO_DROP;
+      }
     });
   });
 
@@ -1305,9 +1459,24 @@ export default function CuboidScene({ debug = {}, theme = "dark" }) {
     }),
     []
   );
+  // Stop the render loop entirely while the hero is scrolled out of view —
+  // the WebGL context stays alive (no re-init cost), but no frames are drawn
+  // and no useFrame work runs. Animations are delta-accumulated, so they
+  // freeze and resume seamlessly. (Background tabs are already covered by
+  // the browser throttling requestAnimationFrame.)
+  const wrapRef = useRef(null);
+  const [inView, setInView] = useState(true);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <div className="h-full w-full">
+    <div ref={wrapRef} className="h-full w-full">
       <Canvas
+        frameloop={inView ? "always" : "never"}
         shadows="variance"
         orthographic
         camera={{ zoom: BASE_ZOOM, position: [0, 1.2, -14] }}
@@ -1323,6 +1492,7 @@ export default function CuboidScene({ debug = {}, theme = "dark" }) {
             DebugLight wraps the point light with a live position/intensity panel. */}
         <DebugLight debug={debug.lights} theme={theme} />
         <TileRibbon geometry={geometry} debug={debug.checkpoints} grain={grain} />
+        <PathDust theme={theme} />
         {debug.tile && <DebugTile geometry={debugGeometry} />}
       </Canvas>
     </div>

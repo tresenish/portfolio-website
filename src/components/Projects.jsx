@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import SectionLabel from "./SectionLabel";
+import StackScene from "./StackScene";
 import expenseTracker from "../componentStyle/img/expense-tracker.png";
 import expenseTrackerDemo from "../componentStyle/img/expenseTrackerDemo.gif";
 import boardroomScreenshot from "../componentStyle/img/boardroom.png";
@@ -78,6 +80,7 @@ export const projects = [
 ];
 
 export default function Projects() {
+  const { theme } = useOutletContext() ?? {};
   const [openIndex, setOpenIndex] = useState(null);
   const openProject = openIndex !== null ? projects[openIndex] : null;
 
@@ -155,6 +158,23 @@ export default function Projects() {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* the full stack, animated: browser → server → database pipeline.
+          Full-bleed closing interlude — the scene is the section's
+          background, with the label and caption overlaid. */}
+      <section className="relative left-1/2 -mx-[50vw] w-screen mt-20 max-nav:mt-14">
+        <div className="relative h-[36rem] max-nav:h-[24rem]">
+          <div className="absolute inset-0">
+            <StackScene theme={theme} />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 px-[8%] pt-2 max-nav:px-[6%]">
+            <SectionLabel title="How a request travels" />
+          </div>
+          <p className="pointer-events-none absolute bottom-4 left-[8%] font-plex text-[0.68rem] text-faint max-nav:left-[6%]">
+            Every feature I ship crosses all three — interface, API, and data.
+          </p>
+        </div>
       </section>
 
       {openProject && (
