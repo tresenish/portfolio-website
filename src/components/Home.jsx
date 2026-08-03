@@ -41,6 +41,35 @@ const STATS = [
   { value: "10+", label: "technologies" },
 ];
 
+// The path so far — compact display copy for the home timeline; the full
+// record with bullets lives on /resume.
+const CAREER = [
+  {
+    period: "2019 – 2023",
+    title: "University of Manitoba",
+    place: "BSc, Computer Science",
+    note: "Moved to Winnipeg and built the foundation in CS.",
+  },
+  {
+    period: "2022 – 2023",
+    title: "Frontend Developer",
+    place: "Digiturn",
+    note: "First production work — responsive landing pages, performance.",
+  },
+  {
+    period: "2023 – 2024",
+    title: "Frontend Developer",
+    place: "KYNTRA",
+    note: "Next.js platforms with secure data handling and tested UI.",
+  },
+  {
+    period: "2024 – now",
+    title: "Frontend Team Lead",
+    place: "LTVX.ai",
+    note: "Leading frontend; full-stack features with AI woven through.",
+  },
+];
+
 /* Liquid-glass card — the same recipe as the navbar island (page-tinted
    translucency, heavy blur + saturation, hairline edge, top highlight,
    soft lift shadow), shared by every card on the home page. The shadow and
@@ -194,6 +223,38 @@ export default function Home() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* career timeline — the quiet info beat between the visual sections:
+          no 3D, just the record. Dots ride a hairline rule (top edge on
+          desktop, left edge stacked on mobile), oldest → newest. */}
+      <section className="mb-20 max-nav:mb-14">
+        <div className="flex items-baseline justify-between gap-4">
+          <SectionLabel title="The path so far" />
+          <Link
+            to="/resume"
+            className="shrink-0 -mt-1 font-plex text-[0.72rem] text-muted hover:text-accent transition-colors whitespace-nowrap"
+          >
+            full resume →
+          </Link>
+        </div>
+        <ol className="grid grid-cols-4 gap-5 max-[900px]:grid-cols-1">
+          {CAREER.map((stop) => (
+            <li
+              key={stop.period}
+              className="relative border-t border-hairline pt-5 max-[900px]:border-t-0 max-[900px]:border-l max-[900px]:pt-0 max-[900px]:pl-5 max-[900px]:pb-2 max-[900px]:last:pb-0"
+            >
+              <span
+                className="absolute -top-[3.5px] left-0 w-[7px] h-[7px] rounded-full bg-accent max-[900px]:top-[0.4em] max-[900px]:-left-[3.5px]"
+                aria-hidden="true"
+              ></span>
+              <p className="font-plex text-[0.68rem] tracking-[0.14em] uppercase text-muted">{stop.period}</p>
+              <h3 className="mt-2 text-[0.98rem] font-medium">{stop.title}</h3>
+              <p className="text-[0.84rem] text-ink-dim">{stop.place}</p>
+              <p className="mt-1.5 text-[0.82rem] leading-relaxed text-muted">{stop.note}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* selected work — top three, the rest live on /projects */}

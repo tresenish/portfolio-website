@@ -334,8 +334,8 @@ function PathDust({ theme = "dark" }) {
         vertexColors
         transparent
         opacity={targetOpacity}
-        color={theme === "light" ? "#1f9377" : "#cfeee2"}
-        size={3.5}
+        color={theme === "light" ? "#07503d" : "#cfeee2"}
+        size={theme === "light" ? 5.5 : 3.5}
         sizeAttenuation={false}
         depthWrite={false}
         blending={theme === "light" ? NormalBlending : AdditiveBlending}
