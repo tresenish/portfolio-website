@@ -161,7 +161,7 @@ function rotAtPos(p) {
 // shades of white: ["#ffffff", "#fafbfc", "#f5f7f9", "#f0f3f5", "#ebeef1", "#e5e9ed", "#dfe4e9"]
 // faded red/orange/blue/purple (stride-ordered): ["#d05f50", "#bf5546", "#9678c2", "#5f8ecb", "#a184cf", "#82a9d6", "#dd8a55"]
 // graphite: ["#3a3d43", "#43474e", "#4d5159", "#575c64", "#61666f", "#6b717b", "#757c86"]
-const COLORS = [
+export const COLORS = [
   "#eff9f5", // almost white
   "#cfeee2", // pale mint
   "#a0dcc6", // soft jade
@@ -199,7 +199,7 @@ function makeTileGeometry({ width = 3.6, depth = 2.3, height = 0.06, radius = 0.
 //   where light rakes the surface at an angle (edges, tilted tiles);
 // - color variant (near-white, low contrast) as albedo map — a subtle speckle
 //   that stays visible even under head-on light, where bump shading vanishes.
-function makeGrainTexture({ size = 256, base = 108, amp = 48 } = {}) {
+export function makeGrainTexture({ size = 256, base = 108, amp = 48 } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");

@@ -5,7 +5,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import CuboidScene from "./CuboidScene";
 import ContributionGraph from "./ContributionGraph";
 import SectionLabel from "./SectionLabel";
-import { projects } from "./Projects";
+import BoardScene from "./BoardScene";
 
 // Below-the-fold content: what I work on day to day, in stack order.
 const PILLARS = [
@@ -257,39 +257,28 @@ export default function Home() {
         </ol>
       </section>
 
-      {/* selected work — top three, the rest live on /projects */}
-      <section className="mb-20 max-nav:mb-14">
-        <div className="flex items-baseline justify-between gap-4">
-          <SectionLabel title="Selected work" />
-          <Link
-            to="/projects"
-            className="shrink-0 -mt-1 font-plex text-[0.72rem] text-muted hover:text-accent transition-colors whitespace-nowrap"
-          >
-            all projects →
-          </Link>
-        </div>
-        <div className="grid grid-cols-3 gap-5 max-[900px]:grid-cols-1">
-          {projects.slice(0, 3).map((project) => (
-            <a
-              key={project.title}
-              href={project.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group flex flex-col overflow-hidden ${GLASS} transition-colors hover:border-accent-dim`}
+      {/* selected work — the hero's tiles land here: a 3D board where the
+          slabs settle into a dashboard of projects. Full-bleed like the
+          other scene bands, label + link + caption overlaid. */}
+      <section className="relative left-1/2 -mx-[50vw] w-screen mb-20 max-nav:mb-14">
+        <div className="relative h-[40rem] max-nav:h-[26rem]">
+          <div className="absolute inset-0">
+            <BoardScene theme={theme} />
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 px-[8%] pt-2 max-nav:px-[6%] flex items-baseline justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <SectionLabel title="Selected work" />
+            </div>
+            <Link
+              to="/projects"
+              className="pointer-events-auto shrink-0 -mt-1 font-plex text-[0.72rem] text-muted hover:text-accent transition-colors whitespace-nowrap"
             >
-              <div className="overflow-hidden border-b border-hairline">
-                <img
-                  className="w-full aspect-[16/10] object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                  alt={`${project.title} screenshot`}
-                  src={project.image}
-                />
-              </div>
-              <div className="flex flex-col gap-1.5 p-5">
-                <h3 className="text-[0.98rem] font-medium transition-colors group-hover:text-accent">{project.title}</h3>
-                <p className="text-[0.84rem] leading-relaxed text-muted">{project.description}</p>
-              </div>
-            </a>
-          ))}
+              all projects →
+            </Link>
+          </div>
+          <p className="pointer-events-none absolute -bottom-2 left-[8%] font-plex text-[0.68rem] text-faint max-nav:left-[6%]">
+            Slabs off the line — hover to lift one, click to visit.
+          </p>
         </div>
       </section>
 
