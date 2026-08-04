@@ -4,7 +4,7 @@
 // backend→frontend as a continuous pair, backend↔database as a shuttle that
 // runs, pauses, and reverses. Bodies wear the tile ramp's greens; a studio
 // environment map and floor shadows keep the hardware grounded.
-import React, { Suspense, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Html, Lightformer, RoundedBox, useAnimations, useGLTF } from "@react-three/drei";
 import { Box3, CanvasTexture, DoubleSide, RepeatWrapping, Vector3 } from "three";
@@ -726,10 +726,23 @@ function Pipeline({ skin }) {
 
 export default function StackScene({ theme = "dark" }) {
   const skin = SKINS[theme] ?? SKINS.dark;
+  // Stop the render loop entirely while the factory is scrolled out of view
+  // (same gate as the hero and board scenes): no frames drawn, no useFrame
+  // work, WebGL context stays warm for an instant resume.
+  const wrapRef = useRef(null);
+  const [inView, setInView] = useState(true);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <div className="h-full w-full">
+    <div ref={wrapRef} className="h-full w-full">
       {/* gentle 3/4 view over a shadow-catching floor */}
       <Canvas
+        frameloop={inView ? "always" : "never"}
         orthographic
         shadows="variance"
         camera={{ zoom: 46, position: [6.5, 4.6, 13] }}

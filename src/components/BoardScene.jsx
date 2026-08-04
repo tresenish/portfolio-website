@@ -35,8 +35,8 @@ const HOVER_LIFT = 0.55;  // toward the camera, off the board
 // right (mid-height, like being dealt from a chute) and flies to its slot,
 // one by one — the six paths fan out across the board. Each lands in its
 // ramp color, then the face paints dark and the screenshot develops.
-const ENTER_WAIT = 0.18;  // s between consecutive tiles
-const ENTER_DUR = 1.05;   // s — one tile's flight
+const ENTER_WAIT = 0.5;   // s between consecutive tiles
+const ENTER_DUR = 2.6;    // s — one tile's flight (slowed for readability)
 const DEPART_N = 6;       // cards that leave the U-turn for the board
 // Tiles are dispensed FROM the U-turn: the first six cards of the flow ARE
 // the board tiles. At its departure moment each card vanishes from the
@@ -455,32 +455,42 @@ const closure = (t, i) => {
   }
   return c * CARD_GAP;
 };
-const DEPART_POSE = Array.from({ length: DEPART_N }, (_, i) => {
-  const u = flowDist(departTime(i) - FAN_START) - i * CARD_GAP + closure(departTime(i), i);
-  const s = uToS(((u % U_LEN) + U_LEN) % U_LEN);
-  const p = pathPoint(s);
-  let rot = (((p.rot + Math.PI / 2) % Math.PI) + Math.PI) % Math.PI;
-  if (rot > Math.PI / 2) rot -= Math.PI;
-  // direction of travel at the departure point (numeric, so it follows the
-  // edited path) — the flight's bezier control point continues along it, so
-  // the tile PEELS off the flow instead of reversing on the spot
-  const q = pathPoint(Math.min(PATH_LEN, s + 0.3));
-  let dirX = q.x - p.x;
-  let dirY = q.y - p.y;
-  const dl = Math.hypot(dirX, dirY) || 1;
-  dirX /= dl;
-  dirY /= dl;
-  // → board-tile local coords: conveyor group shift + board group shift
-  const x = p.x + FAN_SHIFT_X + 2.8;
-  return {
-    x,
-    y: p.y,
-    z: p.z,
-    rot,
-    cx: x + dirX * 2.2,
-    cy: p.y + dirY * 2.2,
-  };
-});
+// Where each of the first six cards is — and the FULL keyframed pose it
+// wears — at the instant it leaves the flow. The board tile takes over from
+// exactly that pose and unwinds it to flat along the shortest arcs during
+// the flight, so the swap is invisible even mid-flip. Computed lazily on
+// first use (the rotation keyframes are declared further down the file).
+let DEPART_CACHE = null;
+function departPoses() {
+  if (DEPART_CACHE) return DEPART_CACHE;
+  DEPART_CACHE = Array.from({ length: DEPART_N }, (_, i) => {
+    const u = flowDist(departTime(i) - FAN_START) - i * CARD_GAP + closure(departTime(i), i);
+    const s = uToS(((u % U_LEN) + U_LEN) % U_LEN);
+    const p = pathPoint(s);
+    // the exact pose the fan card wears at this moment — baseline + keyframes
+    const pose = cardRotation(s, p.rot).map(normAngle);
+    // direction of travel at the departure point (numeric, so it follows the
+    // edited path) — the flight's bezier control point continues along it, so
+    // the tile PEELS off the flow instead of reversing on the spot
+    const q = pathPoint(Math.min(PATH_LEN, s + 0.3));
+    let dirX = q.x - p.x;
+    let dirY = q.y - p.y;
+    const dl = Math.hypot(dirX, dirY) || 1;
+    dirX /= dl;
+    dirY /= dl;
+    // → board-tile local coords: conveyor group shift + board group shift
+    const x = p.x + FAN_SHIFT_X + 2.8;
+    return {
+      x,
+      y: p.y,
+      z: p.z,
+      pose,
+      cx: x + dirX * 2.2,
+      cy: p.y + dirY * 2.2,
+    };
+  });
+  return DEPART_CACHE;
+}
 
 function makeFanTileGeometry() {
   // a touch under hero size (~3.2 × 2.9... held portrait as a card)
@@ -1185,7 +1195,7 @@ function Tiles({ skin, navigate, clockRef }) {
       const k = easeOutCubic(clamp01((intro - wait) / ENTER_DUR));
       const target = hoveredRef.current === i && k >= 1 ? HOVER_LIFT : 0;
       lifts[i] += (target - lifts[i]) * ease;
-      const d = DEPART_POSE[i];
+      const d = departPoses()[i];
       // quadratic bezier: the control point continues the flow direction,
       // so the tile arcs away from the U instead of snapping toward its slot
       const b = 1 - k;
@@ -1194,8 +1204,8 @@ function Tiles({ skin, navigate, clockRef }) {
         b * b * d.y + 2 * b * k * d.cy + k * k * t.y,
         d.z * (1 - k) + lifts[i]
       );
-      // card tilt and long-axis alignment unwind during the flight
-      g.rotation.set(0, CARD_TILT * (1 - k), d.rot * (1 - k));
+      // the inherited card pose unwinds to flat during the flight
+      g.rotation.set(d.pose[0] * (1 - k), d.pose[1] * (1 - k), d.pose[2] * (1 - k));
       // after landing the face paints dark…
       const mat = tileMatRefs.current[i];
       if (mat && !t.all) {
