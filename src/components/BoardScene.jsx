@@ -1302,6 +1302,25 @@ function makePaneGradient(theme) {
   return tex;
 }
 
+// The dot grid's area: the pane shape MINUS the header strip — dots start
+// just below the separator, so the window chrome sits on clean glass with
+// no covering slab needed.
+function makeDotsAreaGeometry() {
+  const w = BOARD_W / 2 - FRAME_TH / 2 + 0.02;
+  const hTop = BOARD_H / 2 - 0.84; // just under the separator
+  const hBot = BOARD_H / 2 - FRAME_TH / 2 + 0.02;
+  const r = CORNER_R - FRAME_TH / 2 + 0.02;
+  const s = new Shape();
+  s.moveTo(-w + r, -hBot);
+  s.lineTo(w - r, -hBot);
+  s.absarc(w - r, -hBot + r, r, -Math.PI / 2, 0);
+  s.lineTo(w, hTop);
+  s.lineTo(-w, hTop);
+  s.lineTo(-w, -hBot + r);
+  s.absarc(-w + r, -hBot + r, r, Math.PI, Math.PI * 1.5);
+  return new ShapeGeometry(s, 24);
+}
+
 function makeSoftShadowTexture() {
   const w = 256;
   const h = 176;
@@ -1360,7 +1379,7 @@ function Board({ theme, clockRef }) {
   const paneGeometry = useMemo(() => makePaneGeometry(), []);
   const paneGradient = useMemo(() => makePaneGradient(theme), [theme]);
   const softShadow = useMemo(() => makeSoftShadowTexture(), []);
-  const dotsGeometry = useMemo(() => new ShapeGeometry(makePaneShape(), 24), []);
+  const dotsGeometry = useMemo(() => makeDotsAreaGeometry(), []);
   const dotTexture = useMemo(() => makeDotTexture(theme), [theme]);
   // normal (-1, 1, 0): as the constant grows, the visible half-space expands
   // from the top-left corner across to bottom-right
@@ -1435,7 +1454,7 @@ function Board({ theme, clockRef }) {
       ))}
       {/* railway-style dot grid on the pane's face, swept in diagonally by
           the clipping plane */}
-      <mesh geometry={dotsGeometry} position={[0, 0, -0.165]}>
+      <mesh geometry={dotsGeometry} position={[0, 0, -0.165]} renderOrder={1}>
         <meshBasicMaterial
           map={dotTexture}
           transparent
@@ -1507,17 +1526,19 @@ function Board({ theme, clockRef }) {
       {["#ff5f57", "#febc2e", "#28c840"].map((c, i) => (
         <mesh
           key={c}
-          position={[-BOARD_W / 2 + 0.55 + i * 0.3, BOARD_H / 2 - 0.46, -0.14]}
+          position={[-BOARD_W / 2 + 0.62 + i * 0.36, BOARD_H / 2 - 0.46, -0.1]}
           rotation={[Math.PI / 2, 0, 0]}
+          renderOrder={3}
         >
-          <cylinderGeometry args={[0.068, 0.068, 0.02, 20]} />
-          <meshStandardMaterial
+          <cylinderGeometry args={[0.1, 0.1, 0.02, 24]} />
+          {/* self-lit: the dash sits beyond the lamps' reach, so lit
+              materials would render black — basic keeps the buttons true */}
+          <meshBasicMaterial
             ref={(m) => {
               if (m) m.userData.tg = 1;
               chromeMats.current[i] = m;
             }}
             color={c}
-            roughness={0.35}
             transparent
             opacity={0}
           />
@@ -1525,14 +1546,12 @@ function Board({ theme, clockRef }) {
       ))}
       <mesh position={[0, BOARD_H / 2 - 0.82, -0.14]}>
         <boxGeometry args={[BOARD_W - 0.5, 0.018, 0.018]} />
-        <meshStandardMaterial
+        <meshBasicMaterial
           ref={(m) => {
             if (m) m.userData.tg = 0.85;
             chromeMats.current[3] = m;
           }}
           color={frameColor}
-          roughness={0.5}
-          metalness={0.3}
           transparent
           opacity={0}
         />
@@ -1545,7 +1564,7 @@ function Board({ theme, clockRef }) {
         style={{ pointerEvents: "none" }}
       >
         <p
-          className={`font-plex text-[0.8rem] tracking-[0.22em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
+          className={`font-plex text-[1.5rem] tracking-[0.22em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
             chromeIn ? "opacity-100" : "opacity-0"
           }`}
           style={{ color: theme === "light" ? "#4f6a60" : "#8b9096" }}
@@ -1711,7 +1730,7 @@ function Tiles({ skin, navigate, clockRef }) {
           style={{ pointerEvents: "none" }}
         >
           <p
-            className={`font-plex text-[0.95rem] tracking-[0.2em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
+            className={`font-plex text-[1.25rem] tracking-[0.2em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
               landed ? "opacity-100" : "opacity-0"
             }`}
             style={{ color: "#07503d" }}
@@ -1735,10 +1754,10 @@ function Tiles({ skin, navigate, clockRef }) {
             landed ? "opacity-100" : "opacity-0"
           }`}
         >
-          <p className="font-plex text-[0.84rem] tracking-[0.18em] uppercase" style={{ color: skin.labelInk }}>
+          <p className="font-plex text-[1.1rem] tracking-[0.18em] uppercase" style={{ color: skin.labelInk }}>
             {t.all ? "and more" : t.project.title}
           </p>
-          <p className="mt-0.5 font-plex text-[0.72rem]" style={{ color: skin.labelMuted }}>
+          <p className="mt-0.5 font-plex text-[0.95rem]" style={{ color: skin.labelMuted }}>
             {t.all ? "the full list on /projects" : t.project.technologies.slice(0, 3).join(" · ")}
           </p>
         </div>
