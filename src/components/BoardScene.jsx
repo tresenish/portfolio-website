@@ -1171,8 +1171,15 @@ function PathMarkers({ onPick, version = 0 }) {
   ));
 }
 
+// hero-style hover: the card under the pointer eases up a little and
+// settles back down when the pointer leaves
+const CARD_HOVER_LIFT = 0.7;
+const CARD_HOVER_EASE = 10;
+
 function Fan({ clockRef }) {
   const cardRefs = useRef([]);
+  const hoveredRef = useRef(null);
+  const liftsRef = useRef(new Float32Array(FAN_N));
   const geometry = useMemo(() => makeFanTileGeometry(), []);
   const grain = useMemo(
     () => ({
@@ -1181,13 +1188,15 @@ function Fan({ clockRef }) {
     }),
     []
   );
-  useFrame(() => {
+  useFrame((_, delta) => {
     const t = clockRef.current;
     // the U forms by itself: the train enters the path card by card from
     // the top tail and rides around until the loop is full — no card is
     // placed, they all ARRIVE. After the lead card laps, it wraps to the
     // back and the steady flow just runs.
     const T = Math.max(0, t - FAN_START);
+    const lifts = liftsRef.current;
+    const ease = Math.min(1, delta * CARD_HOVER_EASE);
     cardRefs.current.forEach((g, i) => {
       if (!g) return;
       // the first six cards — the actual leaders — depart for the board;
@@ -1201,9 +1210,18 @@ function Fan({ clockRef }) {
       if (u < 0) return;
       const s = uToS(u % U_LEN);
       const p = pathPoint(s);
+      // hover lift blends into the path position — but OUTWARD, along the
+      // path's local normal (away from the U's center): up on the top tail,
+      // left at the far point, down on the bottom tail
+      const target = hoveredRef.current === i ? CARD_HOVER_LIFT : 0;
+      lifts[i] += (target - lifts[i]) * ease;
       // depth follows path progress: cards higher on the U stay closest to
       // the camera, so the hand always layers top → bottom, even mid-flow
-      g.position.set(p.x, p.y, p.z);
+      g.position.set(
+        p.x - Math.sin(p.rot) * lifts[i],
+        p.y + Math.cos(p.rot) * lifts[i],
+        p.z
+      );
       // baseline pose (hero twist + path facing) shaped by the rotation
       // keyframes along the path
       const [rx, ry, rz] = cardRotation(s, p.rot);
@@ -1214,9 +1232,19 @@ function Fan({ clockRef }) {
     <group>
       {Array.from({ length: FAN_N }, (_, i) => (
         <group key={i} ref={(g) => (cardRefs.current[i] = g)}>
-          {/* raycast disabled: the flow cards are decoration and must never
-              swallow clicks meant for the path markers */}
-          <mesh geometry={geometry} castShadow raycast={() => {}}>
+          {/* hoverable like the hero tiles (markers still win clicks —
+              they sit in front and stop propagation) */}
+          <mesh
+            geometry={geometry}
+            castShadow
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              hoveredRef.current = i;
+            }}
+            onPointerOut={() => {
+              if (hoveredRef.current === i) hoveredRef.current = null;
+            }}
+          >
             {/* the hero tiles' exact surface: grainy matte with speckled
                 albedo, so raking light shows texture instead of flat fill */}
             <meshStandardMaterial
