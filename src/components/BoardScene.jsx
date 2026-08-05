@@ -36,8 +36,9 @@ const HOVER_LIFT = 0.55;  // toward the camera, off the board
 // right (mid-height, like being dealt from a chute) and flies to its slot,
 // one by one — the six paths fan out across the board. Each lands in its
 // ramp color, then the face paints dark and the screenshot develops.
-const ENTER_WAIT = 0.5;   // s between consecutive tiles
+const ENTER_WAIT = 0.35;  // s between consecutive tiles — brisk but readable
 const ENTER_DUR = 2.6;    // s — one tile's flight (slowed for readability)
+const FLIGHT_DIP = 2.6;   // how far below both endpoints the swoop bottoms out
 const DEPART_N = 6;       // cards that leave the U-turn for the board
 // Tiles are dispensed FROM the U-turn: the first six cards of the flow ARE
 // the board tiles. At its departure moment each card vanishes from the
@@ -79,9 +80,11 @@ const SHOW_LIGHT_LAB = true;   // movable lamps with position/intensity panel
 // The whole conveyor (authored in centered coords) slides right as a unit,
 // back to its home beside the pane — only the turn shows, tails run off-page.
 const FAN_SHIFT_X = 10.3;
-// The dashboard sits well behind the card flow's plane, raised slightly.
+// The dashboard sits well behind the card flow's plane, raised slightly,
+// and scaled up a touch.
 const BOARD_Y = 0.8;
 const BOARD_Z = -9;
+const BOARD_SCALE = 1.12;
 
 // The board is liquid glass (the site's card language, factory's case
 // material), so the page shows through it — labels follow the page ink.
@@ -484,26 +487,13 @@ function departPoses() {
     const p = pathPoint(s);
     // the exact pose the fan card wears at this moment — baseline + keyframes
     const pose = cardRotation(s, p.rot).map(normAngle);
-    // direction of travel at the departure point (numeric, so it follows the
-    // edited path) — the flight's bezier control point continues along it, so
-    // the tile PEELS off the flow instead of reversing on the spot
-    const q = pathPoint(Math.min(PATH_LEN, s + 0.3));
-    let dirX = q.x - p.x;
-    let dirY = q.y - p.y;
-    const dl = Math.hypot(dirX, dirY) || 1;
-    dirX /= dl;
-    dirY /= dl;
-    // → board-tile local coords: conveyor group shift + board group shift
-    // (x/y planar shifts, and the board's depth offset for z)
-    const x = p.x + FAN_SHIFT_X + 2.8;
-    const y = p.y - BOARD_Y;
+    // world → board-local: undo the board group's shift AND its scale
+    // (the flight's swoop control point is computed live in the frame loop)
     return {
-      x,
-      y,
-      z: p.z - BOARD_Z,
+      x: (p.x + FAN_SHIFT_X + 2.8) / BOARD_SCALE,
+      y: (p.y - BOARD_Y) / BOARD_SCALE,
+      z: (p.z - BOARD_Z) / BOARD_SCALE,
       pose,
-      cx: x + dirX * 2.2,
-      cy: y + dirY * 2.2,
     };
   });
   return DEPART_CACHE;
@@ -530,8 +520,8 @@ const CARD_TILT = -0.45;
    than the flow, bobbing gently, wrapping off-page with the loop. One draw
    call; per frame it refills a small position buffer. */
 const DUST_N = 60;
-const DUST_START = PLANE_DELAY + PLANE_DUR; // breathe in after the pane
-const DUST_DUR = 1.4;
+const DUST_START = TILES_START + 2.0; // breathe in once the deal is underway
+const DUST_DUR = 1.6;
 
 function BoardDust({ theme, clockRef }) {
   const pointsRef = useRef();
@@ -942,9 +932,9 @@ const degToRad = (d) => (d * Math.PI) / 180;
 // The working rig — lives at scene level so lamp edits survive toggling
 // the debug tools on/off (debug OFF = clean preview of these same values).
 const DEFAULT_LAMPS = [
-  { x: 4.1, y: -3.2, z: 1.0, intensity: 20 },  // lamp 1 — low left of the turn
-  { x: 7.4, y: 5.0, z: -1.0, intensity: 25 },  // lamp 2 — high over the turn
-  { x: 9.3, y: -0.7, z: -3.0, intensity: 15 }, // lamp 3 — right of the turn, deep
+  { x: 4.1, y: -3.2, z: 1.0, intensity: 20 },   // lamp 1 — low left of the turn
+  { x: 7.4, y: 5.0, z: -1.0, intensity: 25 },   // lamp 2 — high over the turn
+  { x: 11.2, y: -1.0, z: -3.0, intensity: 20 }, // lamp 3 — right of the turn, deep
   // line light — the hero's "sun line": two rect strips back to back,
   // radiating both ways; a long vertical strip close to the camera,
   // washing across the whole scene from the front
@@ -1526,12 +1516,15 @@ function Tiles({ skin, navigate, clockRef }) {
       const target = hoveredRef.current === i && k >= 1 ? HOVER_LIFT : 0;
       lifts[i] += (target - lifts[i]) * ease;
       const d = departPoses()[i];
-      // quadratic bezier: the control point continues the flow direction,
-      // so the tile arcs away from the U instead of snapping toward its slot
+      // parabolic swoop: the bezier control sits at the midpoint, pulled
+      // well below both ends — the tile dives off the turn, sweeps left
+      // through the bottom of the arc, and rises up into its slot
+      const cx = (d.x + t.x) / 2;
+      const cy = Math.min(d.y, t.y) - FLIGHT_DIP;
       const b = 1 - k;
       g.position.set(
-        b * b * d.x + 2 * b * k * d.cx + k * k * t.x,
-        b * b * d.y + 2 * b * k * d.cy + k * k * t.y,
+        b * b * d.x + 2 * b * k * cx + k * k * t.x,
+        b * b * d.y + 2 * b * k * cy + k * k * t.y,
         d.z * (1 - k) + lifts[i]
       );
       // the inherited card pose unwinds to flat during the flight
@@ -1683,7 +1676,7 @@ export default function BoardScene({ theme = "dark" }) {
         {/* the whole set leans back a touch, like the hero tiles' pitch;
             board sits left of center, the hand fan collects on its right */}
         <group rotation={[-0.22, 0, 0]}>
-          <group position={[-2.8, BOARD_Y, BOARD_Z]}>
+          <group position={[-2.8, BOARD_Y, BOARD_Z]} scale={BOARD_SCALE}>
             {/* dashboard parked while the conveyor is being reworked —
                 flip SHOW_DASH to bring it back */}
             {SHOW_DASH && (
