@@ -7,10 +7,12 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Html, Lightformer, useTexture } from "@react-three/drei";
 import {
+  AdditiveBlending,
   BufferAttribute,
   CanvasTexture,
   Color,
   ExtrudeGeometry,
+  NormalBlending,
   Plane,
   RepeatWrapping,
   Shape,
@@ -19,14 +21,13 @@ import {
   Vector3,
 } from "three";
 import { useNavigate } from "react-router-dom";
-import { COLORS, makeGrainTexture } from "./CuboidScene";
+import { COLORS, makeDotTexture as makeMoteTexture, makeGrainTexture } from "./CuboidScene";
 import { projects } from "./Projects";
 
 const TILE_W = 3.4;
 const TILE_H = 2.15;
 const TILE_D = 0.14;
-const SHOT_W = 3.1;   // screenshot plane inset within the tile face
-const SHOT_H = 1.9;
+const SHOT_INSET = 0.02; // screenshot covers the full face (hairline inset)
 const COLS = [-4.4, 0, 4.4];
 const ROWS = [1.95, -1.95];
 const HOVER_LIFT = 0.55;  // toward the camera, off the board
@@ -71,11 +72,16 @@ const REDUCED_MOTION =
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 const SHOW_DASH = true;        // the project dashboard
-const SHOW_DEBUG_CARD = false; // rotation playground card + path markers (kept, hidden)
-const SHOW_PATH_GRAPH = false; // the x/y/z graph editor panel (kept, just hidden)
+// Which debug tools appear while the in-page "debug" switch is ON:
+const SHOW_DEBUG_CARD = false; // rotation playground card + path markers
+const SHOW_PATH_GRAPH = false; // the x/y/z graph editor panel
+const SHOW_LIGHT_LAB = true;   // movable lamps with position/intensity panel
 // The whole conveyor (authored in centered coords) slides right as a unit,
 // back to its home beside the pane — only the turn shows, tails run off-page.
-const FAN_SHIFT_X = 9.1;
+const FAN_SHIFT_X = 10.3;
+// The dashboard sits well behind the card flow's plane, raised slightly.
+const BOARD_Y = 0.8;
+const BOARD_Z = -9;
 
 // The board is liquid glass (the site's card language, factory's case
 // material), so the page shows through it — labels follow the page ink.
@@ -249,7 +255,7 @@ function FitZoom() {
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
   useEffect(() => {
-    camera.zoom = Math.min(width / 21.5, height / 9.6);
+    camera.zoom = Math.min(width / 27, height / 12);
     camera.updateProjectionMatrix();
   }, [camera, width, height]);
   return null;
@@ -314,6 +320,15 @@ function makeBoardTileGeometry() {
   });
   geo.translate(0, 0, -TILE_D / 2);
   return geo;
+}
+
+// The screenshot layer: a rounded rect matching the tile's footprint and
+// corner radius, so the image fills the face edge to edge.
+function makeShotGeometry() {
+  return new ShapeGeometry(
+    roundedRectShape(TILE_W / 2 - SHOT_INSET, TILE_H / 2 - SHOT_INSET, TILE_R - SHOT_INSET),
+    24
+  );
 }
 
 // The card U-turn beside the pane: hero-sized cards laid tangent along a
@@ -479,14 +494,16 @@ function departPoses() {
     dirX /= dl;
     dirY /= dl;
     // → board-tile local coords: conveyor group shift + board group shift
+    // (x/y planar shifts, and the board's depth offset for z)
     const x = p.x + FAN_SHIFT_X + 2.8;
+    const y = p.y - BOARD_Y;
     return {
       x,
-      y: p.y,
-      z: p.z,
+      y,
+      z: p.z - BOARD_Z,
       pose,
       cx: x + dirX * 2.2,
-      cy: p.y + dirY * 2.2,
+      cy: y + dirY * 2.2,
     };
   });
   return DEPART_CACHE;
@@ -507,6 +524,90 @@ function makeFanTileGeometry() {
 // parent group already supplies the pitch (its -0.22 lean), so each card
 // only adds the twist that shows its edge to the camera.
 const CARD_TILT = -0.45;
+
+/* Dust motes, hero-style: a sparse Points cloud drifting along the conveyor
+   path in a halo around the cards — each mote a little slower or faster
+   than the flow, bobbing gently, wrapping off-page with the loop. One draw
+   call; per frame it refills a small position buffer. */
+const DUST_N = 60;
+const DUST_START = PLANE_DELAY + PLANE_DUR; // breathe in after the pane
+const DUST_DUR = 1.4;
+
+function BoardDust({ theme, clockRef }) {
+  const pointsRef = useRef();
+  const matRef = useRef();
+  const sprite = useMemo(() => makeMoteTexture(), []);
+  const { params, positions, colors } = useMemo(() => {
+    const params = Array.from({ length: DUST_N }, () => ({
+      u0: Math.random() * U_LEN,             // start point on the loop
+      speed: 0.4 + Math.random() * 0.7,      // × FLOW_V — calmer than the cards
+      // each mote rides its own concentric lane around the U — mostly
+      // outside the card ring, a few drifting through the inside
+      lane: (Math.random() < 0.75 ? 1 : -1) * (1.7 + Math.random() * 1.8),
+      z0: -2.5 + Math.random() * 3,          // flat-ish depth shell, no diving
+      amp: 0.05 + Math.random() * 0.12,      // bob
+      freq: 0.4 + Math.random() * 0.8,
+      phase: Math.random() * Math.PI * 2,
+    }));
+    const positions = new Float32Array(DUST_N * 3);
+    const colors = new Float32Array(DUST_N * 3);
+    for (let i = 0; i < DUST_N; i++) {
+      const b = 0.35 + Math.random() * 0.65; // per-mote brightness
+      colors[i * 3] = colors[i * 3 + 1] = colors[i * 3 + 2] = b;
+    }
+    return { params, positions, colors };
+  }, []);
+
+  const targetOpacity = theme === "light" ? 0.35 : 0.55;
+  useFrame(() => {
+    const t = clockRef.current;
+    // entrance: hold invisible until the pane lands, then breathe in
+    if (matRef.current && t < DUST_START + DUST_DUR) {
+      matRef.current.opacity = targetOpacity * smoothstep(clamp01((t - DUST_START) / DUST_DUR));
+    }
+    const pos = pointsRef.current?.geometry.attributes.position;
+    if (!pos) return;
+    for (let i = 0; i < DUST_N; i++) {
+      const d = params[i];
+      const u = (d.u0 + t * FLOW_V * d.speed) % U_LEN;
+      // the CLEAN analytic U, not the sculpted card path: each mote is
+      // pushed outward along the local normal onto its own wider ring, so
+      // the swarm reads as loose concentric drift around the flow — and it
+      // floats in a flat depth shell instead of miming the cards' dives
+      const p = analyticPathPoint(uToS(u));
+      const lane = d.lane + Math.sin(t * 0.35 + d.phase) * 0.35;
+      pos.setXYZ(
+        i,
+        p.x - Math.sin(p.rot) * lane,
+        p.y + Math.cos(p.rot) * lane + Math.sin(t * d.freq + d.phase) * d.amp,
+        d.z0 + Math.sin(t * 0.4 + d.phase * 2) * 0.4
+      );
+    }
+    pos.needsUpdate = true;
+  });
+
+  return (
+    <points ref={pointsRef} frustumCulled={false} raycast={() => {}}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" array={positions} count={DUST_N} itemSize={3} />
+        <bufferAttribute attach="attributes-color" array={colors} count={DUST_N} itemSize={3} />
+      </bufferGeometry>
+      {/* faint glow on dark (additive pale mint), pigment dust on light */}
+      <pointsMaterial
+        ref={matRef}
+        map={sprite}
+        vertexColors
+        transparent
+        opacity={targetOpacity}
+        color={theme === "light" ? "#07503d" : "#cfeee2"}
+        size={theme === "light" ? 5.5 : 3.5}
+        sizeAttenuation={false}
+        depthWrite={false}
+        blending={theme === "light" ? NormalBlending : AdditiveBlending}
+      />
+    </points>
+  );
+}
 
 // Rotation choreography along the path, hero-style: keyframes by point
 // number (1..MARKER_COUNT, same numbers as the markers and graphs), blended
@@ -819,6 +920,222 @@ function DebugCard({ position = [-7.6, 0.8, 2], picked }) {
   );
 }
 
+/* Light lab: one movable point light with a marker dot and an info panel.
+   Scrub the colored labels (drag left/right–up/down) or type exact values
+   for X, Y, Z and intensity; copy exports paste-ready props. */
+const LIGHT_ROWS = [
+  { key: "x", label: "X (screen ←→)", color: "#ef4444", scale: 0.03 },
+  { key: "y", label: "Y (height)", color: "#22c55e", scale: 0.03 },
+  { key: "z", label: "Z (depth)", color: "#3b82f6", scale: 0.03 },
+  { key: "intensity", label: "intensity", color: "#facc15", scale: 0.8 },
+];
+// extra rows while the line light is selected (rotations in degrees)
+const LINE_ROWS = [
+  { key: "width", label: "width (length)", color: "#f472b6", scale: 0.06 },
+  { key: "height", label: "height (thick)", color: "#f472b6", scale: 0.01 },
+  { key: "rx", label: "rot X (aim ↕)", color: "#ef4444", scale: 2 },
+  { key: "ry", label: "rot Y (swing ↔)", color: "#22c55e", scale: 2 },
+  { key: "rz", label: "rot Z (roll)", color: "#3b82f6", scale: 2 },
+];
+const degToRad = (d) => (d * Math.PI) / 180;
+
+// The working rig — lives at scene level so lamp edits survive toggling
+// the debug tools on/off (debug OFF = clean preview of these same values).
+const DEFAULT_LAMPS = [
+  { x: 4.1, y: -3.2, z: 1.0, intensity: 20 },  // lamp 1 — low left of the turn
+  { x: 7.4, y: 5.0, z: -1.0, intensity: 25 },  // lamp 2 — high over the turn
+  { x: 9.3, y: -0.7, z: -3.0, intensity: 15 }, // lamp 3 — right of the turn, deep
+  // line light — the hero's "sun line": two rect strips back to back,
+  // radiating both ways; a long vertical strip close to the camera,
+  // washing across the whole scene from the front
+  { line: true, x: 3.0, y: -1.0, z: 12.5, intensity: 8, width: 20, height: 1.2, rx: -5, ry: -615, rz: -90 },
+];
+
+function LightLab({ lamps, setLamps }) {
+  const [active, setActive] = useState(1);
+  const drag = useRef(null); // scrub: { key, px, py, scale }
+  const markerDrag = useRef(null); // marker drag: { i, px, py, startX, startY }
+  const [copied, setCopied] = useState(false);
+  // px → world units at the camera plane, for dragging the markers
+  const worldPerPx = useThree((s) => s.viewport.height / s.size.height);
+
+  const patch = (i, fn) =>
+    setLamps((ls) => ls.map((l, k) => (k === i ? { ...l, ...fn(l) } : l)));
+
+  useEffect(() => {
+    const onMove = (e) => {
+      const m = markerDrag.current;
+      if (m) {
+        // grab-and-pull a lamp across the screen: x/y follow the pointer
+        patch(m.i, () => ({
+          x: m.startX + (e.clientX - m.px) * worldPerPx,
+          y: m.startY + (m.py - e.clientY) * worldPerPx,
+        }));
+        return;
+      }
+      const d = drag.current;
+      if (!d) return;
+      const dx = e.clientX - d.px;
+      const dy = e.clientY - d.py;
+      d.px = e.clientX;
+      d.py = e.clientY;
+      // drag right or up = increase
+      patch(d.i, (l) => {
+        const v = l[d.key] + (dx - dy) * d.scale;
+        const clamped =
+          d.key === "intensity" ? Math.max(0, v)
+          : d.key === "width" || d.key === "height" ? Math.max(0.05, v)
+          : v;
+        return { [d.key]: clamped };
+      });
+    };
+    const onUp = () => {
+      drag.current = null;
+      markerDrag.current = null;
+      document.body.style.cursor = "";
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [worldPerPx]);
+
+  const startDrag = (key, scale) => (e) => {
+    e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+    drag.current = { i: active, key, px: e.clientX, py: e.clientY, scale };
+  };
+
+  const setValue = (key) => (e) => {
+    const v = parseFloat(e.target.value);
+    if (Number.isNaN(v)) return;
+    const clamped =
+      key === "intensity" ? Math.max(0, v)
+      : key === "width" || key === "height" ? Math.max(0.05, v)
+      : v;
+    patch(active, () => ({ [key]: clamped }));
+  };
+
+  const copyLamps = async () => {
+    const text = lamps
+      .map((l, i) => {
+        const base = `lamp ${i + 1}: position={[${l.x.toFixed(1)}, ${l.y.toFixed(1)}, ${l.z.toFixed(1)}]} intensity={${Math.round(l.intensity)}}`;
+        return l.line
+          ? `${base} rot={[${Math.round(l.rx)}, ${Math.round(l.ry)}, ${Math.round(l.rz)}]}deg width={${l.width.toFixed(1)}} height={${l.height.toFixed(2)}} // line`
+          : base;
+      })
+      .join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    } catch {
+      window.prompt("Copy:", text);
+    }
+  };
+
+  const lamp = lamps[active];
+  return (
+    <>
+      {lamps.map((l, i) => (
+        <group key={i}>
+          {/* marker: yellow = selected, grey = other; drag either to move it.
+              the line light draws as a bar matching its size and aim */}
+          {l.line ? (
+            <mesh
+              position={[l.x, l.y, l.z]}
+              rotation={[degToRad(l.rx), degToRad(l.ry), degToRad(l.rz)]}
+              renderOrder={12}
+            >
+              <boxGeometry args={[l.width, l.height, 0.06]} />
+              <meshBasicMaterial
+                color={i === active ? "#facc15" : "#8b9096"}
+                transparent
+                opacity={0.55}
+                depthTest={false}
+              />
+            </mesh>
+          ) : (
+            <mesh position={[l.x, l.y, l.z]} renderOrder={12}>
+              <sphereGeometry args={[0.12, 12, 12]} />
+              <meshBasicMaterial color={i === active ? "#facc15" : "#8b9096"} depthTest={false} />
+            </mesh>
+          )}
+          <mesh
+            position={[l.x, l.y, l.z]}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              setActive(i);
+              markerDrag.current = { i, px: e.clientX, py: e.clientY, startX: l.x, startY: l.y };
+              document.body.style.cursor = "move";
+            }}
+            onPointerOver={() => {
+              if (!markerDrag.current) document.body.style.cursor = "move";
+            }}
+            onPointerOut={() => {
+              if (!markerDrag.current) document.body.style.cursor = "";
+            }}
+          >
+            <sphereGeometry args={[0.45, 8, 8]} />
+            <meshBasicMaterial visible={false} />
+          </mesh>
+        </group>
+      ))}
+      <Html position={[-10.4, 4.5, 0]} style={{ whiteSpace: "nowrap" }} zIndexRange={[50, 41]}>
+        <DraggablePanel>
+          <div className="font-plex text-[0.7rem] leading-relaxed text-ink bg-page/80 border border-hairline rounded-md px-3 py-1.5 select-none">
+            {/* which lamp the rows edit */}
+            <div className="mb-1 flex items-center gap-1.5">
+              {lamps.map((l, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`border rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                    active === i
+                      ? "border-accent text-accent"
+                      : "border-hairline text-ink-dim hover:text-ink hover:border-accent-dim"
+                  }`}
+                >
+                  {l.line ? "line" : `light ${i + 1}`}
+                </button>
+              ))}
+            </div>
+            {[...LIGHT_ROWS, ...(lamp.line ? LINE_ROWS : [])].map(({ key, label, color, scale }) => (
+              <div key={key} className="flex items-center gap-2 py-0.5">
+                <span
+                  className="w-24 cursor-ew-resize"
+                  style={{ color }}
+                  onPointerDown={startDrag(key, scale)}
+                  title="drag to scrub"
+                >
+                  {label}
+                </span>
+                <input
+                  type="number"
+                  step={key === "intensity" ? "5" : key === "rx" || key === "ry" || key === "rz" ? "5" : "0.5"}
+                  value={key === "intensity" ? Math.round(lamp[key]) : lamp[key].toFixed(1)}
+                  onChange={setValue(key)}
+                  className="w-16 bg-transparent border border-hairline rounded px-1 py-0.5 text-ink"
+                />
+              </div>
+            ))}
+            <div className="mt-1.5 pt-1.5 border-t border-hairline flex items-center gap-2">
+              <button
+                onClick={copyLamps}
+                className="border border-hairline rounded px-2 py-0.5 text-ink-dim hover:text-ink hover:border-accent-dim transition-colors cursor-pointer"
+              >
+                {copied ? "copied!" : "copy all"}
+              </button>
+            </div>
+          </div>
+        </DraggablePanel>
+      </Html>
+    </>
+  );
+}
+
 /* Numbered reference points, one per editable path sample (canvas edge →
    top tail → around the turn → bottom tail → canvas edge), for directing
    path edits by number. They re-place themselves when the editor changes
@@ -941,7 +1258,7 @@ function makeDotTexture(theme) {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, size, size);
-  ctx.fillStyle = theme === "light" ? "rgba(28,30,33,0.20)" : "rgba(231,233,234,0.16)";
+  ctx.fillStyle = theme === "light" ? "rgba(7,80,61,0.18)" : "rgba(160,220,198,0.15)";
   ctx.beginPath();
   ctx.arc(size / 2, size / 2, 3.2, 0, Math.PI * 2);
   ctx.fill();
@@ -965,10 +1282,11 @@ function Board({ theme, clockRef }) {
   const cornerRefs = useRef([]); // tl, br (origins) then tr, bl (meeting points)
   const chromeMats = useRef([]); // window-chrome materials, fade with the pane
   const [chromeIn, setChromeIn] = useState(REDUCED_MOTION);
-  // Frame and pane sit close to the page's card language: hairline-dark
-  // border, page-tinted translucent glass (the 2D cards' bg-page/60 recipe).
-  const frameColor = theme === "light" ? "#c2c8cf" : "#3d4148";
-  const glassTarget = theme === "light" ? 0.55 : 0.55;
+  // Frame and pane carry the site's phthalo identity in muted form: deep
+  // desaturated green border, green-cast translucent glass — same family as
+  // the tile ramp, dialed way down.
+  const frameColor = theme === "light" ? "#b8c8c3" : "#41665a";
+  const glassTarget = theme === "light" ? 0.55 : 0.72;
   const shadowTarget = theme === "light" ? 0.16 : 0.32;
   const cornerGeometry = useMemo(() => makeCornerGeometry(), []);
   const paneGeometry = useMemo(() => makePaneGeometry(), []);
@@ -1058,14 +1376,18 @@ function Board({ theme, clockRef }) {
       </mesh>
       {/* the board: one big liquid-glass pane, edge-to-edge with the frame */}
       <mesh geometry={paneGeometry} position={[0, 0, -0.32]}>
-        <meshPhysicalMaterial
+        {/* matte pane: high roughness kills the gloss, and a soft emissive
+            base keeps the panel readable on the dark theme even though it
+            sits deep behind the lamps' reach */}
+        <meshStandardMaterial
           ref={glassRef}
-          color={theme === "light" ? "#ffffff" : "#17181b"}
+          color={theme === "light" ? "#f4faf7" : "#2a3833"}
+          emissive={theme === "light" ? "#000000" : "#1f2b27"}
+          emissiveIntensity={theme === "light" ? 0 : 0.9}
           transparent
           opacity={0}
-          roughness={0.08}
+          roughness={0.92}
           metalness={0}
-          envMapIntensity={theme === "light" ? 0.9 : 0.5}
           depthWrite={false}
         />
       </mesh>
@@ -1122,7 +1444,7 @@ function Board({ theme, clockRef }) {
           className={`font-plex text-[0.6rem] tracking-[0.22em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
             chromeIn ? "opacity-100" : "opacity-0"
           }`}
-          style={{ color: theme === "light" ? "#5b6167" : "#8b9096" }}
+          style={{ color: theme === "light" ? "#4f6a60" : "#7d968d" }}
         >
           volodymyr — selected work
         </p>
@@ -1137,22 +1459,29 @@ function Tiles({ skin, navigate, clockRef }) {
   const shown = projects.slice(0, 5);
   const textures = useTexture(shown.map((p) => p.image));
 
-  // sRGB + cover-crop each screenshot to the plane's aspect (like CSS
-  // object-fit: cover), so nothing is squashed
+  // sRGB + cover-crop each screenshot to the tile face's aspect (like CSS
+  // object-fit: cover). The rounded-rect geometry's UVs are the shape's own
+  // coords (± half-extents), so the crop is remapped into that space.
   useEffect(() => {
     textures.forEach((tex) => {
       tex.colorSpace = SRGBColorSpace;
       const img = tex.image;
       if (!img) return;
       const imgAspect = img.width / img.height;
-      const planeAspect = SHOT_W / SHOT_H;
-      if (imgAspect > planeAspect) {
-        tex.repeat.set(planeAspect / imgAspect, 1);
-        tex.offset.set((1 - tex.repeat.x) / 2, 0);
+      const faceAspect = TILE_W / TILE_H;
+      let rx = 1;
+      let ry = 1;
+      let ox = 0;
+      let oy = 0;
+      if (imgAspect > faceAspect) {
+        rx = faceAspect / imgAspect;
+        ox = (1 - rx) / 2;
       } else {
-        tex.repeat.set(1, imgAspect / planeAspect);
-        tex.offset.set(0, (1 - tex.repeat.y) / 2);
+        ry = imgAspect / faceAspect;
+        oy = (1 - ry) / 2;
       }
+      tex.repeat.set(rx / TILE_W, ry / TILE_H);
+      tex.offset.set(ox + rx * 0.5, oy + ry * 0.5);
       tex.needsUpdate = true;
     });
   }, [textures]);
@@ -1173,6 +1502,7 @@ function Tiles({ skin, navigate, clockRef }) {
   );
 
   const tileGeometry = useMemo(() => makeBoardTileGeometry(), []);
+  const shotGeometry = useMemo(() => makeShotGeometry(), []);
   const groupRefs = useRef([]);
   const tileMatRefs = useRef([]);
   const shotMatRefs = useRef([]);
@@ -1249,10 +1579,9 @@ function Tiles({ skin, navigate, clockRef }) {
         />
       </mesh>
 
-      {/* project screenshot, just proud of the face, fading in after landing */}
+      {/* project screenshot, edge to edge on the face, fading in after landing */}
       {t.tex && (
-        <mesh position={[0, 0, TILE_D / 2 + 0.012]}>
-          <planeGeometry args={[SHOT_W, SHOT_H]} />
+        <mesh geometry={shotGeometry} position={[0, 0, TILE_D / 2 + 0.012]}>
           <meshBasicMaterial
             ref={(m) => (shotMatRefs.current[i] = m)}
             map={t.tex}
@@ -1306,6 +1635,10 @@ export default function BoardScene({ theme = "dark" }) {
   const [picked, setPicked] = useState(null);
   // bumps when the graph editor mutates the path → markers re-place
   const [pathVersion, setPathVersion] = useState(0);
+  // master switch: hides/shows every debug tool at once (in-page button)
+  const [debugOn, setDebugOn] = useState(false);
+  // the light rig — persists across debug toggles; the lab edits it in place
+  const [lamps, setLamps] = useState(DEFAULT_LAMPS);
   // Same visibility gate as the hero: no frames while scrolled away.
   const wrapRef = useRef(null);
   const [inView, setInView] = useState(true);
@@ -1328,47 +1661,29 @@ export default function BoardScene({ theme = "dark" }) {
       >
         <ClockDriver clockRef={clockRef} />
         <FitZoom />
-        {/* studio softboxes for specular life on the slab edges */}
-        <Environment resolution={256}>
-          <Lightformer form="rect" intensity={theme === "light" ? 3 : 2} position={[0, 6, 8]} scale={[12, 6, 1]} />
-          <Lightformer form="rect" intensity={1.2} position={[-8, 3, 4]} rotation={[0, Math.PI / 2, 0]} scale={[8, 4, 1]} />
-          <Lightformer form="rect" intensity={0.9} color="#dfe6ee" position={[8, 4, 4]} rotation={[0, -Math.PI / 2, 0]} scale={[8, 4, 1]} />
-        </Environment>
-        <ambientLight intensity={theme === "light" ? 0.9 : 0.65} />
-        <hemisphereLight
-          intensity={theme === "light" ? 0.7 : 0.5}
-          color="#e8edf4"
-          groundColor={theme === "light" ? "#c8ccd2" : "#3a3d43"}
-        />
-        {/* key light throws the falling tiles' shadows across the board */}
-        <directionalLight
-          position={[4, 7, 6]}
-          intensity={theme === "light" ? 1.1 : 1.0}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-          shadow-camera-left={-9}
-          shadow-camera-right={9}
-          shadow-camera-top={7}
-          shadow-camera-bottom={-7}
-          shadow-radius={8}
-          shadow-blurSamples={16}
-        />
-        <directionalLight position={[-4, 5, -8]} intensity={theme === "light" ? 0.3 : 0.9} color="#aac2e2" />
-        {/* hero-style glare rig over the card flow: the ribbon's "sun line"
-            (two rect strips back-to-back) hung above the U, plus a deep
-            point fill with physical falloff — the same light language that
-            makes the hero tiles read as objects */}
-        <group position={[7.5, 6.5, 1.5]} rotation={[-1.9, 0, 0]}>
-          <rectAreaLight width={10} height={1.3} intensity={9} />
-          <rectAreaLight rotation={[Math.PI, 0, 0]} width={10} height={1.3} intensity={9} />
-        </group>
-        <pointLight position={[7.5, 3.2, 4.5]} intensity={26} decay={2} />
+        {/* the rig itself always renders from the live lamp values; the lab
+            (markers + panel) just edits them — so toggling debug off is a
+            clean preview, never a reset */}
+        {lamps.map((l, i) =>
+          l.line ? (
+            <group
+              key={i}
+              position={[l.x, l.y, l.z]}
+              rotation={[degToRad(l.rx), degToRad(l.ry), degToRad(l.rz)]}
+            >
+              <rectAreaLight width={l.width} height={l.height} intensity={l.intensity} />
+              <rectAreaLight rotation={[Math.PI, 0, 0]} width={l.width} height={l.height} intensity={l.intensity} />
+            </group>
+          ) : (
+            <pointLight key={i} position={[l.x, l.y, l.z]} intensity={l.intensity} decay={2} />
+          )
+        )}
+        {debugOn && SHOW_LIGHT_LAB && <LightLab lamps={lamps} setLamps={setLamps} />}
 
         {/* the whole set leans back a touch, like the hero tiles' pitch;
             board sits left of center, the hand fan collects on its right */}
         <group rotation={[-0.22, 0, 0]}>
-          <group position={[-2.8, 0, 0]}>
+          <group position={[-2.8, BOARD_Y, BOARD_Z]}>
             {/* dashboard parked while the conveyor is being reworked —
                 flip SHOW_DASH to bring it back */}
             {SHOW_DASH && (
@@ -1382,14 +1697,28 @@ export default function BoardScene({ theme = "dark" }) {
           </group>
           <group position={[FAN_SHIFT_X, 0, 0]}>
             <Fan clockRef={clockRef} />
-            {SHOW_DEBUG_CARD && (
+            <BoardDust theme={theme} clockRef={clockRef} />
+            {debugOn && SHOW_DEBUG_CARD && (
               <PathMarkers onPick={(p) => setPicked({ ...p })} version={pathVersion} />
             )}
           </group>
         </group>
-        {SHOW_DEBUG_CARD && <DebugCard picked={picked} />}
+        {debugOn && SHOW_DEBUG_CARD && <DebugCard picked={picked} />}
       </Canvas>
-      {SHOW_PATH_GRAPH && <PathGraphEditor onChange={() => setPathVersion((v) => v + 1)} />}
+      {debugOn && SHOW_PATH_GRAPH && (
+        <PathGraphEditor onChange={() => setPathVersion((v) => v + 1)} />
+      )}
+      {/* master debug switch, tucked in the section's top-right corner */}
+      <button
+        onClick={() => setDebugOn((d) => !d)}
+        className={`absolute top-2 right-3 z-20 font-plex text-[0.62rem] border rounded px-2 py-1 bg-page/85 backdrop-blur transition-colors cursor-pointer ${
+          debugOn
+            ? "border-accent text-accent"
+            : "border-hairline text-muted hover:text-ink hover:border-accent-dim"
+        }`}
+      >
+        debug {debugOn ? "on" : "off"}
+      </button>
     </div>
   );
 }

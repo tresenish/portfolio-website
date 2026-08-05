@@ -222,7 +222,7 @@ export function makeGrainTexture({ size = 256, base = 108, amp = 48 } = {}) {
 
 // Soft round sprite for the dust motes: a white radial gradient fading to
 // transparent, so points render as feathered dots instead of hard squares.
-function makeDotTexture(size = 64) {
+export function makeDotTexture(size = 64) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");

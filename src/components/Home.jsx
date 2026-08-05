@@ -259,12 +259,21 @@ export default function Home() {
 
       {/* selected work — the hero's tiles land here: a 3D board where the
           slabs settle into a dashboard of projects. Full-bleed like the
-          other scene bands, label + link + caption overlaid. */}
-      <section className="relative left-1/2 -mx-[50vw] w-screen mb-20 max-nav:mb-14">
-        <div className="relative h-[40rem] max-nav:h-[26rem]">
+          other scene bands, label + link + caption overlaid. No bottom
+          margin: the hand-off gradient below carries the dark out. */}
+      <section className="relative left-1/2 -mx-[50vw] w-screen">
+        <div className="relative h-[46rem] max-nav:h-[28rem]">
           <div className="absolute inset-0">
             <BoardScene theme={theme} />
           </div>
+          {/* same bottom anchor as the hero: the band fades toward black low
+              down, grounding the scene the way the ribbon is grounded */}
+          <div
+            className={`pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-60% ${
+              theme === "light" ? "to-black/25" : "to-black/65"
+            }`}
+            aria-hidden="true"
+          />
           <div className="pointer-events-none absolute inset-x-0 top-0 px-[8%] pt-2 max-nav:px-[6%] flex items-baseline justify-between gap-4">
             <div className="flex-1 min-w-0">
               <SectionLabel title="Selected work" />
@@ -282,8 +291,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* closing CTA */}
-      <section className={`${GLASS} px-10 py-12 max-nav:px-6 max-nav:py-8 flex items-center justify-between gap-8 flex-wrap`}>
+      {/* closing CTA — sits in the hand-off zone: the band's black bleeds in
+          from above (upside-down twin of the band's bottom anchor) and fades
+          back to the page color on the way down */}
+      <div className="relative pt-20 max-nav:pt-14">
+        <div
+          className={`pointer-events-none absolute left-1/2 -ml-[50vw] w-screen top-0 h-[22rem] bg-gradient-to-b from-10% to-transparent ${
+            theme === "light" ? "from-black/25" : "from-black/65"
+          }`}
+          aria-hidden="true"
+        />
+      <section className={`relative ${GLASS} px-10 py-12 max-nav:px-6 max-nav:py-8 flex items-center justify-between gap-8 flex-wrap`}>
         <div>
           <h2 className="text-[1.35rem] font-semibold tracking-tight">Have something to build?</h2>
           <p className="mt-2 max-w-[34rem] text-[0.92rem] leading-relaxed text-muted">
@@ -298,6 +316,7 @@ export default function Home() {
           Get in touch →
         </Link>
       </section>
+      </div>
       </div>
     </div>
     </>
