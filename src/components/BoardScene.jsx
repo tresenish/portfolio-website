@@ -24,8 +24,8 @@ import { useNavigate } from "react-router-dom";
 import { COLORS, makeDotTexture as makeMoteTexture, makeGrainTexture } from "./CuboidScene";
 import { projects } from "./Projects";
 
-const TILE_W = 3.4;
-const TILE_H = 2.15;
+const TILE_W = 3.8;
+const TILE_H = 2.4;
 const TILE_D = 0.14;
 const SHOT_INSET = 0.02; // screenshot covers the full face (hairline inset)
 const COLS = [-4.4, 0, 4.4];
@@ -81,10 +81,12 @@ const SHOW_LIGHT_LAB = true;   // movable lamps with position/intensity panel
 // back to its home beside the pane — only the turn shows, tails run off-page.
 const FAN_SHIFT_X = 10.3;
 // The dashboard sits well behind the card flow's plane, raised slightly,
-// and scaled up a touch.
+// scaled up a touch, and turned toward the conveyor — the yaw is what
+// makes it read as an object in space instead of a flat overlay.
 const BOARD_Y = 0.8;
 const BOARD_Z = -9;
 const BOARD_SCALE = 1.12;
+const BOARD_ROT_Y = 0.3;
 
 // The board is liquid glass (the site's card language, factory's case
 // material), so the page shows through it — labels follow the page ink.
@@ -485,14 +487,22 @@ function departPoses() {
     const u = flowDist(departTime(i) - FAN_START) - i * CARD_GAP + closure(departTime(i), i);
     const s = uToS(((u % U_LEN) + U_LEN) % U_LEN);
     const p = pathPoint(s);
-    // the exact pose the fan card wears at this moment — baseline + keyframes
+    // the exact pose the fan card wears at this moment — baseline + keyframes,
+    // with the board's yaw subtracted so the pose is expressed in the
+    // board's rotated frame
     const pose = cardRotation(s, p.rot).map(normAngle);
-    // world → board-local: undo the board group's shift AND its scale
+    pose[1] = normAngle(pose[1] - BOARD_ROT_Y);
+    // world → board-local: undo the board group's shift, yaw, AND scale
     // (the flight's swoop control point is computed live in the frame loop)
+    const wx = p.x + FAN_SHIFT_X + 2.8;
+    const wy = p.y - BOARD_Y;
+    const wz = p.z - BOARD_Z;
+    const cosR = Math.cos(BOARD_ROT_Y);
+    const sinR = Math.sin(BOARD_ROT_Y);
     return {
-      x: (p.x + FAN_SHIFT_X + 2.8) / BOARD_SCALE,
-      y: (p.y - BOARD_Y) / BOARD_SCALE,
-      z: (p.z - BOARD_Z) / BOARD_SCALE,
+      x: (wx * cosR - wz * sinR) / BOARD_SCALE,
+      y: wy / BOARD_SCALE,
+      z: (wx * sinR + wz * cosR) / BOARD_SCALE,
       pose,
     };
   });
@@ -1267,6 +1277,46 @@ function makePaneGeometry() {
   return geo;
 }
 
+// Liquid-glass helpers: the pane's vertical sheen gradient (lighter at the
+// top, like the navbar island's inset highlight falling down the surface)
+// and a blurred rounded-rect shadow that floats the panel off the page.
+function makePaneGradient(theme) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2;
+  canvas.height = 256;
+  const ctx = canvas.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  if (theme === "light") {
+    g.addColorStop(0, "#ffffff");
+    g.addColorStop(1, "#e9efec");
+  } else {
+    g.addColorStop(0, "#3e434a");
+    g.addColorStop(1, "#191b1e");
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 2, 256);
+  const tex = new CanvasTexture(canvas);
+  // the pane's extruded UVs are world coords: map [−H/2..H/2] → [0..1]
+  tex.repeat.set(1 / BOARD_W, 1 / BOARD_H);
+  tex.offset.set(0.5, 0.5);
+  return tex;
+}
+
+function makeSoftShadowTexture() {
+  const w = 256;
+  const h = 176;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.filter = "blur(16px)";
+  ctx.fillStyle = "rgba(0,0,0,1)";
+  ctx.beginPath();
+  ctx.roundRect(34, 34, w - 68, h - 68, 18);
+  ctx.fill();
+  return new CanvasTexture(canvas);
+}
+
 // Railway-style dot grid living on the pane's face: a tiny dot tile
 // repeated in world units (ShapeGeometry UVs are the shape's own coords).
 const DOT_SPACING = 0.6; // world units between dots
@@ -1276,7 +1326,7 @@ function makeDotTexture(theme) {
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, size, size);
-  ctx.fillStyle = theme === "light" ? "rgba(7,80,61,0.18)" : "rgba(160,220,198,0.15)";
+  ctx.fillStyle = theme === "light" ? "rgba(7,80,61,0.18)" : "rgba(231,233,234,0.15)";
   ctx.beginPath();
   ctx.arc(size / 2, size / 2, 3.2, 0, Math.PI * 2);
   ctx.fill();
@@ -1303,11 +1353,13 @@ function Board({ theme, clockRef }) {
   // Frame and pane carry the site's phthalo identity in muted form: deep
   // desaturated green border, green-cast translucent glass — same family as
   // the tile ramp, dialed way down.
-  const frameColor = theme === "light" ? "#b8c8c3" : "#41665a";
+  const frameColor = theme === "light" ? "#b8c8c3" : "#565c65";
   const glassTarget = theme === "light" ? 0.55 : 0.72;
   const shadowTarget = theme === "light" ? 0.16 : 0.32;
   const cornerGeometry = useMemo(() => makeCornerGeometry(), []);
   const paneGeometry = useMemo(() => makePaneGeometry(), []);
+  const paneGradient = useMemo(() => makePaneGradient(theme), [theme]);
+  const softShadow = useMemo(() => makeSoftShadowTexture(), []);
   const dotsGeometry = useMemo(() => new ShapeGeometry(makePaneShape(), 24), []);
   const dotTexture = useMemo(() => makeDotTexture(theme), [theme]);
   // normal (-1, 1, 0): as the constant grows, the visible half-space expands
@@ -1394,14 +1446,16 @@ function Board({ theme, clockRef }) {
       </mesh>
       {/* the board: one big liquid-glass pane, edge-to-edge with the frame */}
       <mesh geometry={paneGeometry} position={[0, 0, -0.32]}>
-        {/* matte pane: high roughness kills the gloss, and a soft emissive
-            base keeps the panel readable on the dark theme even though it
-            sits deep behind the lamps' reach */}
+        {/* liquid-glass pane: fully self-lit from a vertical gradient
+            (lighter top, like the 2D cards' inset highlight) so the panel's
+            shade is deterministic regardless of the lamp rig; matte, no
+            specular gloss */}
         <meshStandardMaterial
           ref={glassRef}
-          color={theme === "light" ? "#f4faf7" : "#2a3833"}
-          emissive={theme === "light" ? "#000000" : "#1f2b27"}
-          emissiveIntensity={theme === "light" ? 0 : 0.9}
+          color="#000000"
+          emissive="#ffffff"
+          emissiveMap={paneGradient}
+          emissiveIntensity={theme === "light" ? 0.95 : 0.85}
           transparent
           opacity={0}
           roughness={0.92}
@@ -1414,6 +1468,37 @@ function Board({ theme, clockRef }) {
       <mesh position={[0, 0, -0.13]} receiveShadow>
         <planeGeometry args={[13.0, 8.2]} />
         <shadowMaterial ref={shadowRef} transparent opacity={0} />
+      </mesh>
+
+      {/* liquid-glass details: the 2D cards' inset top highlight, rendered
+          as a hairline bright strip inside the frame's top edge… */}
+      <mesh position={[0, BOARD_H / 2 - 0.09, -0.14]}>
+        <boxGeometry args={[BOARD_W - 1.1, 0.03, 0.01]} />
+        <meshBasicMaterial
+          ref={(m) => {
+            if (m) m.userData.tg = theme === "light" ? 0.75 : 0.16;
+            chromeMats.current[4] = m;
+          }}
+          color="#ffffff"
+          transparent
+          opacity={0}
+          depthWrite={false}
+        />
+      </mesh>
+      {/* …and a soft blurred shadow floating the panel off the page,
+          offset down like the cards' lift shadow */}
+      <mesh position={[0.3, -0.55, -0.8]}>
+        <planeGeometry args={[BOARD_W + 2.6, BOARD_H + 2.6]} />
+        <meshBasicMaterial
+          ref={(m) => {
+            if (m) m.userData.tg = theme === "light" ? 0.22 : 0.5;
+            chromeMats.current[5] = m;
+          }}
+          map={softShadow}
+          transparent
+          opacity={0}
+          depthWrite={false}
+        />
       </mesh>
 
       {/* window chrome: traffic lights, centered title, and a hairline
@@ -1453,16 +1538,17 @@ function Board({ theme, clockRef }) {
         />
       </mesh>
       <Html
-        center
+        transform
+        scale={0.34}
         position={[0, BOARD_H / 2 - 0.46, -0.14]}
         zIndexRange={[10, 0]}
         style={{ pointerEvents: "none" }}
       >
         <p
-          className={`font-plex text-[0.6rem] tracking-[0.22em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
+          className={`font-plex text-[0.8rem] tracking-[0.22em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
             chromeIn ? "opacity-100" : "opacity-0"
           }`}
-          style={{ color: theme === "light" ? "#4f6a60" : "#7d968d" }}
+          style={{ color: theme === "light" ? "#4f6a60" : "#8b9096" }}
         >
           volodymyr — selected work
         </p>
@@ -1613,11 +1699,19 @@ function Tiles({ skin, navigate, clockRef }) {
         </mesh>
       )}
 
-      {/* the sixth slab points at the full list */}
+      {/* the sixth slab points at the full list. transform mode: the DOM
+          text is CSS-3D-transformed with the scene, so it skews with the
+          board's yaw instead of billboarding flat */}
       {t.all && (
-        <Html center position={[0, 0, TILE_D / 2 + 0.03]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+        <Html
+          transform
+          scale={0.34}
+          position={[0, 0, TILE_D / 2 + 0.03]}
+          zIndexRange={[10, 0]}
+          style={{ pointerEvents: "none" }}
+        >
           <p
-            className={`font-plex text-[0.72rem] tracking-[0.2em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
+            className={`font-plex text-[0.95rem] tracking-[0.2em] uppercase whitespace-nowrap select-none transition-opacity duration-700 ${
               landed ? "opacity-100" : "opacity-0"
             }`}
             style={{ color: "#07503d" }}
@@ -1629,16 +1723,22 @@ function Tiles({ skin, navigate, clockRef }) {
 
       {/* name + stack under each tile, factory-station style; colors keyed
           to the board the label sits over, not the page theme */}
-      <Html center position={[0, -TILE_H / 2 - 0.42, 0.1]} zIndexRange={[10, 0]} style={{ pointerEvents: "none" }}>
+      <Html
+        transform
+        scale={0.34}
+        position={[0, -TILE_H / 2 - 0.42, 0.1]}
+        zIndexRange={[10, 0]}
+        style={{ pointerEvents: "none" }}
+      >
         <div
           className={`text-center whitespace-nowrap select-none transition-opacity duration-700 ${
             landed ? "opacity-100" : "opacity-0"
           }`}
         >
-          <p className="font-plex text-[0.62rem] tracking-[0.18em] uppercase" style={{ color: skin.labelInk }}>
+          <p className="font-plex text-[0.84rem] tracking-[0.18em] uppercase" style={{ color: skin.labelInk }}>
             {t.all ? "and more" : t.project.title}
           </p>
-          <p className="mt-0.5 font-plex text-[0.54rem]" style={{ color: skin.labelMuted }}>
+          <p className="mt-0.5 font-plex text-[0.72rem]" style={{ color: skin.labelMuted }}>
             {t.all ? "the full list on /projects" : t.project.technologies.slice(0, 3).join(" · ")}
           </p>
         </div>
@@ -1704,7 +1804,7 @@ export default function BoardScene({ theme = "dark" }) {
         {/* the whole set leans back a touch, like the hero tiles' pitch;
             board sits left of center, the hand fan collects on its right */}
         <group rotation={[-0.22, 0, 0]}>
-          <group position={[-2.8, BOARD_Y, BOARD_Z]} scale={BOARD_SCALE}>
+          <group position={[-2.8, BOARD_Y, BOARD_Z]} scale={BOARD_SCALE} rotation={[0, BOARD_ROT_Y, 0]}>
             {/* dashboard parked while the conveyor is being reworked —
                 flip SHOW_DASH to bring it back */}
             {SHOW_DASH && (
