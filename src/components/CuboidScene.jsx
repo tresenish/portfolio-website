@@ -1424,10 +1424,10 @@ function DebugLight({ debug, theme = "dark" }) {
 // the camera and the ribbon layout always agree.
 const BASE_ZOOM = 55;
 // Baseline holds from small desktop through Full HD (MacBook and FHD see
-// the same tile scale); past 1920 the scene scales up toward the 1.15 cap,
-// so 2K and 4K get a comfortably larger ribbon.
+// the same tile scale); past 1920 the scene scales up toward the cap,
+// which 2K reaches — a solidly larger ribbon on 2K and 4K.
 const ZOOM_REF_WIDTH = 1920;
-const ZOOM_MAX_SCALE = 1.15;
+const ZOOM_MAX_SCALE = 1.33;
 const SMALL_WIDTH = 1024;
 const ZOOM_MIN_SCALE = 0.4;
 
