@@ -260,7 +260,11 @@ function FitZoom() {
   const width = useThree((s) => s.size.width);
   const height = useThree((s) => s.size.height);
   useEffect(() => {
-    camera.zoom = Math.min(width / 27, height / 12);
+    // Same scale curve as the hero: baseline through Full HD, growing
+    // linearly to the 1.33 cap at 2K. A height guard bounds the zoom so
+    // the tile flights' bottom swoop never clips the fixed-height band.
+    const scaleW = Math.min(1.33, Math.max(1, width / 1920));
+    camera.zoom = Math.min(Math.min(width / 27, height / 12) * scaleW, height / 11.2);
     camera.updateProjectionMatrix();
   }, [camera, width, height]);
   return null;
