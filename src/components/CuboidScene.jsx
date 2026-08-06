@@ -1423,7 +1423,10 @@ function DebugLight({ debug, theme = "dark" }) {
 // crop — floored so tiles don't shrink to specks. Pure function of width so
 // the camera and the ribbon layout always agree.
 const BASE_ZOOM = 55;
-const ZOOM_REF_WIDTH = 1728;
+// Baseline holds from small desktop through 2K (MacBook, FHD, 1440p all see
+// the same tile scale — wider screens just see more ribbon); only 4K-class
+// widths scale up, still capped.
+const ZOOM_REF_WIDTH = 2560;
 const ZOOM_MAX_SCALE = 1.15;
 const SMALL_WIDTH = 1024;
 const ZOOM_MIN_SCALE = 0.4;
