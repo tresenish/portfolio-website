@@ -38,7 +38,7 @@ const HOVER_LIFT = 0.55;  // toward the camera, off the board
 // ramp color, then the face paints dark and the screenshot develops.
 const ENTER_WAIT = 0.35;  // s between consecutive tiles — brisk but readable
 const ENTER_DUR = 2.6;    // s — one tile's flight (slowed for readability)
-const FLIGHT_DIP = 2.6;   // how far below both endpoints the swoop bottoms out
+const FLIGHT_DIP = 2.1;   // how far below both endpoints the swoop bottoms out
 const DEPART_N = 6;       // cards that leave the U-turn for the board
 // Tiles are dispensed FROM the U-turn: the first six cards of the flow ARE
 // the board tiles. At its departure moment each card vanishes from the
@@ -264,7 +264,7 @@ function FitZoom() {
     // linearly to the 1.33 cap at 2K. A height guard bounds the zoom so
     // the tile flights' bottom swoop never clips the fixed-height band.
     const scaleW = Math.min(1.33, Math.max(1, width / 1920));
-    camera.zoom = Math.min(Math.min(width / 27, height / 12) * scaleW, height / 11.2);
+    camera.zoom = Math.min(Math.min(width / 27, height / 12) * scaleW, height / 10.2);
     camera.updateProjectionMatrix();
   }, [camera, width, height]);
   return null;
