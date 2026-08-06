@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } from 'react-router-dom';
+import { Analytics } from "@vercel/analytics/react";
 import Root from "./components/Root";
 import Home from "./components/Home";
 import Projects from "./components/Projects";
@@ -23,6 +24,12 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
+      {/* Vercel Web Analytics — no cookies, production only. Visits from a
+          browser with the "va-ignore" localStorage flag (yours) are dropped
+          before sending. */}
+      <Analytics
+        beforeSend={(event) => (localStorage.getItem("va-ignore") ? null : event)}
+      />
     </>
   );
 }
